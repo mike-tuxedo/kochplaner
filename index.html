@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Wochenplan-App für Lieblingsgerichte">
+    <meta name="theme-color" content="#11191f">
+    <title>Kochplaner</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Pico CSS -->
+    <link rel="stylesheet" href="css/pico.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Header with Title -->
+    <header class="app-header container-fluid">
+        <strong>🍳 Kochplaner</strong>
+    </header>
+
+    <!-- Bottom Navigation (Mobile-style) -->
+    <nav class="bottom-nav">
+        <a href="#/" class="nav-link">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="#/recipes" class="nav-link">
+            <span class="nav-icon">📖</span>
+            <span class="nav-label">Rezepte</span>
+        </a>
+        <a href="#/weekplan" class="nav-link">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">Wochenplan</span>
+        </a>
+        <a href="#/shopping" class="nav-link">
+            <span class="nav-icon">🛒</span>
+            <span class="nav-label">Einkaufsliste</span>
+        </a>
+        <a href="#/discover" class="nav-link">
+            <span class="nav-icon">🔍</span>
+            <span class="nav-label">Entdecken</span>
+        </a>
+    </nav>
+
+    <!-- Main Content Area (SPA) -->
+    <main class="container" id="app">
+        <!-- Content wird dynamisch geladen -->
+        <div id="loading">
+            <article aria-busy="true">Lade App...</article>
+        </div>
+    </main>
+
+    <!-- JavaScript Modules -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

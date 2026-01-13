@@ -1,0 +1,260 @@
+# HomeCooking App - Implementierungsplan
+
+## 🎯 Projektziel
+Eine einfache, offline-fähige Wochenplan-App für Lieblingsgerichte mit Einkaufslisten-Funktion.
+
+## 📋 Projektstruktur
+
+```
+homecooking/
+├── index.html              # Haupt-HTML-Datei (SPA)
+├── manifest.json           # PWA Manifest für Offline-Fähigkeit
+├── sw.js                   # Service Worker
+├── css/
+│   ├── pico.min.css        # Pico CSS lokal (herunterladen)
+│   └── style.css           # Custom Styles (nested CSS)
+├── js/
+│   ├── lib/
+│   │   └── idb.js          # IndexedDB Wrapper (lokal)
+│   ├── app.js              # Haupt-App-Logik & Routing
+│   ├── storage.js          # IndexedDB-Management
+│   ├── recipes.js          # Rezepte-Verwaltung
+│   ├── weekplan.js         # Wochenplan-Generator
+│   └── shopping.js         # Einkaufslisten-Generator
+└── icons/                  # PWA Icons (optional)
+```
+
+## 🎯 Funktionale Module
+
+### 1. Rezepte-Verwaltung (recipes.js)
+- CRUD-Operationen für Gerichte
+- Datenstruktur:
+  ```js
+  {
+    id: string,
+    name: string,
+    ingredients: [
+      { name: string, amount: number, unit: string }
+    ],
+    createdAt: timestamp
+  }
+  ```
+- Speicherung in IndexedDB
+
+### 2. Wochenplan-Generator (weekplan.js)
+- Randomisierter Algorithmus für 7 Tage (Montag-Sonntag)
+- Vermeidung von Wiederholungen in kurzer Zeit
+- Editierfunktion (Rezept austauschen)
+- Datenstruktur:
+  ```js
+  {
+    weekId: string,
+    startDate: date,
+    days: [
+      { dayName: string, date: date, recipeId: string }
+    ]
+  }
+  ```
+
+### 3. Einkaufsliste (shopping.js)
+- Aggregiert alle Zutaten des aktuellen Wochenplans
+- Zusammenfassen gleicher Zutaten (z.B. 3x Zwiebeln → 3 Zwiebeln)
+- Abhak-Funktion für erledigte Einkäufe
+- Export als Textliste
+
+### 4. API-Integration (app.js)
+- TheMealDB API für zufällige Rezeptvorschläge
+- Endpoint: `https://www.themealdb.com/api/json/v1/1/random.php`
+- Fallback-Meldung wenn offline
+- Import-Funktion für externe Rezepte
+
+## 🎨 SPA-Navigation
+
+### Ansichten (Hash-Routing)
+1. **`#/` - Dashboard**
+   - Übersicht aktueller Wochenplan (7 Tage)
+   - Quick-Actions (Neue Woche, Einkaufsliste)
+
+2. **`#/recipes` - Meine Rezepte**
+   - Liste aller Rezepte
+   - Hinzufügen/Bearbeiten/Löschen
+
+3. **`#/weekplan` - Wochenplan**
+   - 7-Tage-Ansicht
+   - Edit-Modus (Rezept pro Tag ändern)
+   - "Neue Woche generieren" Button
+
+4. **`#/shopping` - Einkaufsliste**
+   - Generierte Liste aus aktuellem Wochenplan
+   - Checkbox zum Abhaken
+   - Text-Export
+
+5. **`#/discover` - Rezept entdecken**
+   - Zufälliges Rezept von TheMealDB
+   - "Als eigenes Rezept speichern" Button
+
+### Navigation
+- Hamburger-Menü (mobil) / Sidebar (desktop)
+- Hash-basiertes Client-Side-Routing
+- Browser Back/Forward funktionsfähig
+
+## 💾 Datenpersistenz
+
+### IndexedDB Schema
+**Datenbank:** `homecooking`
+
+**Object Stores:**
+1. **recipes** (keyPath: `id`)
+   - Index: `createdAt`
+
+2. **weekplans** (keyPath: `weekId`)
+   - Index: `startDate`
+
+3. **settings** (keyPath: `key`)
+   - z.B. `{ key: 'currentWeekId', value: '...' }`
+
+**Library:** idb v7 (Jake Archibald)
+- Kleiner Wrapper für IndexedDB (~1KB)
+- Promise-basiert
+- Download: https://cdn.jsdelivr.net/npm/idb@7/build/umd.js
+- Lokal speichern unter `js/lib/idb.js`
+
+## 🎨 Styling-Ansatz
+
+### Pico CSS als Basis
+- Download: https://unpkg.com/@picocss/pico@latest/css/pico.min.css
+- Lokal speichern unter `css/pico.min.css`
+- Nutzt semantisches HTML (kein class-overload)
+
+### Custom CSS (style.css)
+Nested CSS für:
+```css
+.recipe-card {
+  & .header { ... }
+  & .ingredients { ... }
+}
+
+.weekplan-grid {
+  & .day-slot {
+    & .recipe-name { ... }
+  }
+}
+
+.shopping-list {
+  & .item {
+    & input[type="checkbox"] { ... }
+  }
+}
+```
+
+### Design-Prinzipien
+- Mobile-first
+- Pico CSS Default Theme
+- Minimale Custom-Styles
+- CSS Grid für Layouts
+
+## 🔧 Technische Details
+
+### Keine Build-Tools
+- Vanilla JavaScript (ES6+)
+- Native Modules (`type="module"`)
+- Keine Transpilation
+- Keine Bundler
+
+### Service Worker
+- Caching-Strategie: Cache First für statische Assets
+- Network First für API-Calls
+- Fallback für Offline-Modus
+
+### Progressive Web App
+- Installierbar auf Smartphone/Desktop
+- Funktioniert offline
+- App-Icons (optional später)
+
+### Browser-Anforderungen
+- Moderne Browser (Chrome, Firefox, Safari, Edge)
+- IndexedDB Support (alle modernen Browser)
+- ES6 Modules Support
+- CSS Nesting (oder Fallback auf flaches CSS)
+
+## 🚀 Implementierungs-Reihenfolge
+
+### Phase 1: Grundgerüst
+- [x] Projektstruktur anlegen
+- [ ] Pico CSS lokal einbinden
+- [ ] idb Library lokal einbinden
+- [ ] HTML-Grundstruktur (SPA-Shell)
+- [ ] Service Worker Setup
+- [ ] Hash-Routing implementieren
+
+### Phase 2: Datenschicht
+- [ ] IndexedDB initialisieren (storage.js)
+- [ ] CRUD-Funktionen für Rezepte
+- [ ] CRUD-Funktionen für Wochenpläne
+
+### Phase 3: Rezepte-Modul
+- [ ] Rezepte-Liste anzeigen
+- [ ] Rezept hinzufügen (Formular)
+- [ ] Rezept bearbeiten/löschen
+- [ ] Zutaten dynamisch hinzufügen/entfernen
+
+### Phase 4: Wochenplan
+- [ ] Random-Algorithmus implementieren
+- [ ] Wochenplan-Ansicht (7 Tage)
+- [ ] Edit-Modus (Rezept pro Tag ändern)
+- [ ] "Neue Woche generieren" Funktion
+
+### Phase 5: Einkaufsliste
+- [ ] Zutaten aus Wochenplan aggregieren
+- [ ] Gleiche Zutaten zusammenfassen
+- [ ] Abhak-Funktion
+- [ ] Text-Export
+
+### Phase 6: API-Integration
+- [ ] TheMealDB API einbinden
+- [ ] Zufälliges Rezept abrufen
+- [ ] Rezept-Import-Funktion
+- [ ] Offline-Fallback
+
+### Phase 7: Polish
+- [ ] Custom CSS (nested)
+- [ ] Responsive Design testen
+- [ ] PWA-Icons erstellen
+- [ ] UX-Verbesserungen
+- [ ] Animationen (optional)
+
+## 📚 Externe Ressourcen
+
+### Zu downloaden & lokal hosten:
+1. **Pico CSS**: https://unpkg.com/@picocss/pico@latest/css/pico.min.css
+2. **idb Library**: https://cdn.jsdelivr.net/npm/idb@7/build/umd.js
+
+### API
+- **TheMealDB**: https://www.themealdb.com/api.php
+  - Random Meal: `https://www.themealdb.com/api/json/v1/1/random.php`
+  - Kostenlos, keine API-Key erforderlich
+
+## 🔒 Datensicherheit
+
+- Alle Daten bleiben lokal im Browser
+- Keine Server-Kommunikation außer TheMealDB API
+- Kein User-Tracking
+- Export-Funktion für Backup (optional später)
+
+## ✅ Definition of Done
+
+Die App ist fertig, wenn:
+- ✅ Rezepte können angelegt, bearbeitet und gelöscht werden
+- ✅ Ein randomisierter Wochenplan kann generiert werden
+- ✅ Der Wochenplan ist editierbar (einzelne Tage ändern)
+- ✅ Eine Einkaufsliste wird automatisch erstellt
+- ✅ Externe Rezepte können über TheMealDB importiert werden
+- ✅ Die App funktioniert komplett offline
+- ✅ Daten bleiben nach Cache-Clearing erhalten (IndexedDB)
+- ✅ Mobile und Desktop responsive
+
+---
+
+**Stand:** 2026-01-13
+**Technologie-Stack:** HTML, CSS (Pico CSS), Vanilla JavaScript, IndexedDB, Service Worker
+**Besonderheit:** Keine Build-Tools, komplett offline-fähig, local-first
