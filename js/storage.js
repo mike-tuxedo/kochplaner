@@ -108,3 +108,80 @@ export async function setSetting(key, value) {
     const database = await initDB();
     await database.put('settings', { key, value });
 }
+
+/**
+ * Export/Import Rezepte
+ */
+export async function exportRecipes() {
+    const recipes = await getAllRecipes();
+    const data = JSON.stringify(recipes, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rezepte-export.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+export async function importRecipes(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const recipes = JSON.parse(e.target.result);
+                if (!Array.isArray(recipes)) {
+                    throw new Error('Ungültiges Format');
+                }
+
+                let imported = 0;
+                for (const recipe of recipes) {
+                    if (recipe.name && Array.isArray(recipe.ingredients)) {
+                        // Neue ID vergeben um Konflikte zu vermeiden
+                        recipe.id = crypto.randomUUID();
+                        recipe.createdAt = Date.now();
+                        await saveRecipe(recipe);
+                        imported++;
+                    }
+                }
+                resolve(imported);
+            } catch (err) {
+                reject(err);
+            }
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(file);
+    });
+}
+
+/**
+ * Lädt Standard-Rezepte aus rezepte-export.json
+ */
+export async function loadDefaultRecipes() {
+    try {
+        const response = await fetch('rezepte-export.json');
+        if (!response.ok) {
+            throw new Error('Datei nicht gefunden');
+        }
+
+        const recipes = await response.json();
+        if (!Array.isArray(recipes)) {
+            throw new Error('Ungültiges Format');
+        }
+
+        let imported = 0;
+        for (const recipe of recipes) {
+            if (recipe.name && Array.isArray(recipe.ingredients)) {
+                recipe.id = crypto.randomUUID();
+                recipe.createdAt = Date.now();
+                await saveRecipe(recipe);
+                imported++;
+            }
+        }
+        return imported;
+    } catch (err) {
+        console.error('Fehler beim Laden der Standardrezepte:', err);
+        throw err;
+    }
+}

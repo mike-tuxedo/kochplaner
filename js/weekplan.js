@@ -83,9 +83,9 @@ export async function renderWeekplan() {
     let weekplan = await getCurrentWeekplan();
 
     let html = `
-        <header>
+        <header class="page-header">
             <h2>Wochenplan</h2>
-            <button onclick="window.generateNewWeek()">🎲 Neue Woche generieren</button>
+            <button onclick="window.generateNewWeek()">Wochenplan erstellen</button>
         </header>
     `;
 
@@ -99,15 +99,24 @@ export async function renderWeekplan() {
         return html;
     }
 
-    html += '<div class="weekplan-grid">';
+    html += '<div class="weekplan-grid" id="weekplan-grid">';
 
-    for (const day of weekplan.days) {
+    for (let i = 0; i < weekplan.days.length; i++) {
+        const day = weekplan.days[i];
         const recipe = await getRecipe(day.recipeId);
         const date = new Date(day.date);
         const dateStr = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
 
+        const isFirst = i === 0;
+        const isLast = i === weekplan.days.length - 1;
+
         html += `
-            <article class="day-slot">
+            <article class="day-slot" draggable="true" data-index="${i}" data-day="${day.dayName}">
+                <div class="slot-controls">
+                    <button class="move-btn" ${isFirst ? 'disabled' : ''} onclick="window.moveWeekplanItem(${i}, -1)" title="Nach oben">▲</button>
+                    <div class="drag-handle" title="Ziehen zum Verschieben">⋮⋮</div>
+                    <button class="move-btn" ${isLast ? 'disabled' : ''} onclick="window.moveWeekplanItem(${i}, 1)" title="Nach unten">▼</button>
+                </div>
                 <div class="day-header">${day.dayName}</div>
                 <small>${dateStr}</small>
                 ${recipe ? `
@@ -136,6 +145,154 @@ export async function renderWeekplan() {
 }
 
 /**
+ * Initialisiert Drag & Drop für den Wochenplan
+ */
+export function initWeekplanDragDrop() {
+    const grid = document.getElementById('weekplan-grid');
+    if (!grid) return;
+
+    let draggedElement = null;
+    let draggedIndex = null;
+
+    grid.addEventListener('dragstart', (e) => {
+        const slot = e.target.closest('.day-slot');
+        if (!slot) return;
+
+        draggedElement = slot;
+        draggedIndex = parseInt(slot.dataset.index);
+        slot.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', draggedIndex);
+    });
+
+    grid.addEventListener('dragend', (e) => {
+        const slot = e.target.closest('.day-slot');
+        if (slot) {
+            slot.classList.remove('dragging');
+        }
+        document.querySelectorAll('.day-slot').forEach(s => {
+            s.classList.remove('drag-over-before', 'drag-over-after');
+        });
+        draggedElement = null;
+        draggedIndex = null;
+    });
+
+    grid.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+
+        const slot = e.target.closest('.day-slot');
+        if (!slot || slot === draggedElement) {
+            return;
+        }
+
+        // Clear all indicators
+        document.querySelectorAll('.day-slot').forEach(s => {
+            s.classList.remove('drag-over-before', 'drag-over-after');
+        });
+
+        // Determine if we're in the left or right half of the slot
+        const rect = slot.getBoundingClientRect();
+        const midX = rect.left + rect.width / 2;
+        const isBefore = e.clientX < midX;
+
+        // Show CSS-based indicator
+        if (isBefore) {
+            slot.classList.add('drag-over-before');
+        } else {
+            slot.classList.add('drag-over-after');
+        }
+    });
+
+    grid.addEventListener('dragleave', (e) => {
+        // Only handle if leaving the grid entirely
+        if (!e.relatedTarget || !grid.contains(e.relatedTarget)) {
+            document.querySelectorAll('.day-slot').forEach(s => {
+                s.classList.remove('drag-over-before', 'drag-over-after');
+            });
+        }
+    });
+
+    grid.addEventListener('drop', async (e) => {
+        e.preventDefault();
+
+        const targetSlot = e.target.closest('.day-slot');
+        if (!targetSlot || targetSlot === draggedElement) return;
+
+        const targetIndex = parseInt(targetSlot.dataset.index);
+
+        // Determine drop position (left/right)
+        const rect = targetSlot.getBoundingClientRect();
+        const midX = rect.left + rect.width / 2;
+        const dropBefore = e.clientX < midX;
+
+        // Calculate final index
+        let finalIndex = dropBefore ? targetIndex : targetIndex + 1;
+
+        // Adjust if dragging from before the target
+        if (draggedIndex < targetIndex) {
+            finalIndex = dropBefore ? targetIndex - 1 : targetIndex;
+        } else {
+            finalIndex = dropBefore ? targetIndex : targetIndex + 1;
+        }
+
+        if (draggedIndex !== null && finalIndex !== draggedIndex) {
+            await moveWeekplanRecipe(draggedIndex, finalIndex);
+        }
+    });
+}
+
+/**
+ * Verschiebt ein Rezept von einem Index zu einem anderen (insert, nicht swap)
+ */
+async function moveWeekplanRecipe(fromIndex, toIndex) {
+    const weekplan = await getCurrentWeekplan();
+    if (!weekplan) return;
+
+    // Get the recipe being moved
+    const movingRecipeId = weekplan.days[fromIndex].recipeId;
+
+    // Remove it from the source position
+    const recipeIds = weekplan.days.map(d => d.recipeId);
+    recipeIds.splice(fromIndex, 1);
+
+    // Insert at the target position
+    recipeIds.splice(toIndex, 0, movingRecipeId);
+
+    // Update all days with new recipe assignments
+    for (let i = 0; i < weekplan.days.length; i++) {
+        weekplan.days[i].recipeId = recipeIds[i];
+    }
+
+    await saveWeekplan(weekplan);
+    await refreshWeekplanUI();
+}
+
+/**
+ * Aktualisiert die Wochenplan-UI ohne Seiten-Reload
+ */
+async function refreshWeekplanUI() {
+    const appContainer = document.getElementById('app');
+    if (!appContainer) return;
+
+    const content = await renderWeekplan();
+    appContainer.innerHTML = content;
+
+    // Re-initialize drag & drop
+    setTimeout(() => initWeekplanDragDrop(), 50);
+}
+
+/**
+ * Bewegt ein Element um eine Position (für Pfeiltasten)
+ */
+export async function moveWeekplanItem(index, direction) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex > 6) return;
+
+    await moveWeekplanRecipe(index, targetIndex);
+}
+
+/**
  * Ändert das Rezept für einen bestimmten Tag
  */
 export async function changeRecipeForDay(dayName) {
@@ -160,7 +317,7 @@ export async function changeRecipeForDay(dayName) {
             if (day) {
                 day.recipeId = selectedRecipe.id;
                 await saveWeekplan(weekplan);
-                window.location.reload();
+                await refreshWeekplanUI();
             }
         }
     }
@@ -171,6 +328,7 @@ export async function changeRecipeForDay(dayName) {
  */
 export async function renderDashboard() {
     const weekplan = await getCurrentWeekplan();
+    const recipes = await getAllRecipes();
 
     let html = '';
 
@@ -182,7 +340,11 @@ export async function renderDashboard() {
                 <p>2. Generiere einen Wochenplan</p>
                 <p>3. Erstelle deine Einkaufsliste</p>
                 <br>
-                <a href="#/recipes" role="button">Rezepte hinzufügen</a>
+                ${recipes.length === 0 ? `
+                    <button onclick="window.loadDefaultRecipes()">📥 Standardrezepte laden</button>
+                    <p style="margin-top: 1rem"><small>oder</small></p>
+                ` : ''}
+                <a href="#/recipes" role="button" class="secondary">Eigene Rezepte hinzufügen</a>
             </article>
         `;
     } else {

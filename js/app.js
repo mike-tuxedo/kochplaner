@@ -2,10 +2,10 @@
  * app.js - Haupt-App mit Routing & Initialisierung
  */
 
-import { initDB } from './storage.js';
-import { renderRecipesList, renderRecipeForm, saveRecipeFromForm, deleteRecipeById, addIngredientRow } from './recipes.js';
-import { renderWeekplan, renderDashboard, generateWeekplan, changeRecipeForDay } from './weekplan.js';
-import { renderShoppingList, toggleShoppingItem, exportShoppingList } from './shopping.js';
+import { initDB, loadDefaultRecipes } from './storage.js';
+import { renderRecipesList, renderRecipeForm, saveRecipeFromForm, deleteRecipeById, addIngredientRow, exportRecipesAction, importRecipesAction } from './recipes.js';
+import { renderWeekplan, renderDashboard, generateWeekplan, changeRecipeForDay, initWeekplanDragDrop, moveWeekplanItem } from './weekplan.js';
+import { renderShoppingList, toggleShoppingItem, shareShoppingList } from './shopping.js';
 
 // Globale Funktionen für onclick-Handler
 window.showRecipeForm = showRecipeForm;
@@ -15,7 +15,11 @@ window.addIngredientRow = addIngredientRow;
 window.generateNewWeek = generateNewWeek;
 window.changeRecipeForDay = changeRecipeForDay;
 window.toggleShoppingItem = toggleShoppingItem;
-window.exportShoppingList = exportShoppingList;
+window.shareShoppingList = shareShoppingList;
+window.moveWeekplanItem = moveWeekplanItem;
+window.exportRecipesAction = exportRecipesAction;
+window.importRecipesAction = importRecipesAction;
+window.loadDefaultRecipes = loadDefaultRecipesAction;
 
 /**
  * App-Initialisierung
@@ -78,6 +82,8 @@ async function router() {
 
             case '/weekplan':
                 content = await renderWeekplan();
+                // Initialize drag & drop after content is rendered
+                setTimeout(() => initWeekplanDragDrop(), 50);
                 break;
 
             case '/shopping':
@@ -159,6 +165,16 @@ async function generateNewWeek() {
     if (confirmed) {
         await generateWeekplan();
         window.location.reload();
+    }
+}
+
+async function loadDefaultRecipesAction() {
+    try {
+        const count = await loadDefaultRecipes();
+        alert(`${count} Standardrezept(e) wurden geladen!`);
+        window.location.hash = '/recipes';
+    } catch (err) {
+        alert('Fehler beim Laden: ' + err.message);
     }
 }
 

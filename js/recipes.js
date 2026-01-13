@@ -2,7 +2,7 @@
  * recipes.js - Rezepte-Verwaltung
  */
 
-import { getAllRecipes, getRecipe, saveRecipe, deleteRecipe } from './storage.js';
+import { getAllRecipes, getRecipe, saveRecipe, deleteRecipe, exportRecipes, importRecipes } from './storage.js';
 
 /**
  * Rendert die Rezepte-Liste
@@ -31,6 +31,17 @@ export async function renderRecipesList() {
         }
         html += '</div>';
     }
+
+    // Export/Import Buttons
+    html += `
+        <div class="import-export-actions">
+            <button class="secondary" onclick="window.exportRecipesAction()">📤 Rezepte exportieren</button>
+            <label class="import-btn secondary" role="button">
+                📥 Rezepte importieren
+                <input type="file" accept=".json" onchange="window.importRecipesAction(this.files[0])" hidden>
+            </label>
+        </div>
+    `;
 
     return html;
 }
@@ -157,4 +168,26 @@ export function addIngredientRow() {
         <button type="button" class="contrast" onclick="this.parentElement.remove()">-</button>
     `;
     container.appendChild(row);
+}
+
+/**
+ * Export-Aktion
+ */
+export async function exportRecipesAction() {
+    await exportRecipes();
+}
+
+/**
+ * Import-Aktion
+ */
+export async function importRecipesAction(file) {
+    if (!file) return;
+
+    try {
+        const count = await importRecipes(file);
+        alert(`${count} Rezept(e) erfolgreich importiert!`);
+        window.location.reload();
+    } catch (err) {
+        alert('Fehler beim Import: ' + err.message);
+    }
 }

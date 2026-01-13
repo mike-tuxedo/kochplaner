@@ -51,7 +51,7 @@ export async function renderShoppingList() {
     let html = `
         <header class="page-header">
             <h2>📝 Einkaufsliste</h2>
-            <button class="secondary" onclick="window.exportShoppingList()">Exportieren</button>
+            <button class="secondary" onclick="window.shareShoppingList()">↗ Teilen</button>
         </header>
     `;
 
@@ -105,31 +105,45 @@ export function toggleShoppingItem(index) {
 }
 
 /**
- * Exportiert die Einkaufsliste als Text
+ * Teilt die Einkaufsliste via Web Share API oder Zwischenablage
  */
-export async function exportShoppingList() {
+export async function shareShoppingList() {
     const shoppingList = await generateShoppingList();
 
     if (shoppingList.length === 0) {
-        alert('Keine Einkaufsliste zum Exportieren!');
+        alert('Keine Einkaufsliste zum Teilen!');
         return;
     }
 
-    let text = '🛒 Einkaufsliste\n';
-    text += '==================\n\n';
+    let text = '🛒 Einkaufsliste\n\n';
 
     for (const item of shoppingList) {
         text += `☐ ${item.amount} ${item.unit} ${item.name}\n`;
     }
 
-    text += '\n---\nErstellt mit HomeCooking App';
+    text += '\n—\nErstellt mit Kochplaner';
 
-    // Text in Zwischenablage kopieren
-    try {
-        await navigator.clipboard.writeText(text);
-        alert('✓ Einkaufsliste in Zwischenablage kopiert!');
-    } catch (err) {
-        // Fallback: Text anzeigen
-        alert(text);
+    // Web Share API verwenden wenn verfügbar
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Einkaufsliste',
+                text: text
+            });
+        } catch (err) {
+            // User hat abgebrochen - kein Fehler
+            if (err.name !== 'AbortError') {
+                console.error('Share error:', err);
+            }
+        }
+    } else {
+        // Fallback: Text in Zwischenablage kopieren
+        try {
+            await navigator.clipboard.writeText(text);
+            alert('Einkaufsliste in Zwischenablage kopiert!');
+        } catch (err) {
+            // Letzter Fallback: Text anzeigen
+            alert(text);
+        }
     }
 }
