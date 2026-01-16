@@ -5,6 +5,21 @@
 
 import { openDB } from './lib/idb.js';
 
+/**
+ * Generiert eine UUID mit Fallback für ältere Browser
+ */
+export function generateUUID() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    // Fallback für Browser ohne randomUUID
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 const DB_NAME = 'homecooking';
 const DB_VERSION = 1;
 
@@ -56,7 +71,7 @@ export async function getRecipe(id) {
 export async function saveRecipe(recipe) {
     const database = await initDB();
     if (!recipe.id) {
-        recipe.id = crypto.randomUUID();
+        recipe.id = generateUUID();
         recipe.createdAt = Date.now();
     }
     await database.put('recipes', recipe);
@@ -84,7 +99,7 @@ export async function getWeekplan(weekId) {
 export async function saveWeekplan(weekplan) {
     const database = await initDB();
     if (!weekplan.weekId) {
-        weekplan.weekId = crypto.randomUUID();
+        weekplan.weekId = generateUUID();
     }
     await database.put('weekplans', weekplan);
     return weekplan;
@@ -139,7 +154,7 @@ export async function importRecipes(file) {
                 for (const recipe of recipes) {
                     if (recipe.name && Array.isArray(recipe.ingredients)) {
                         // Neue ID vergeben um Konflikte zu vermeiden
-                        recipe.id = crypto.randomUUID();
+                        recipe.id = generateUUID();
                         recipe.createdAt = Date.now();
                         await saveRecipe(recipe);
                         imported++;
@@ -173,7 +188,7 @@ export async function loadDefaultRecipes() {
         let imported = 0;
         for (const recipe of recipes) {
             if (recipe.name && Array.isArray(recipe.ingredients)) {
-                recipe.id = crypto.randomUUID();
+                recipe.id = generateUUID();
                 recipe.createdAt = Date.now();
                 await saveRecipe(recipe);
                 imported++;

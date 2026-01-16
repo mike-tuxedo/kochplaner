@@ -32,17 +32,6 @@ export async function renderRecipesList() {
         html += '</div>';
     }
 
-    // Export/Import Buttons
-    html += `
-        <div class="import-export-actions">
-            <button class="secondary" onclick="window.exportRecipesAction()">📤 Rezepte exportieren</button>
-            <label class="import-btn secondary" role="button">
-                📥 Rezepte importieren
-                <input type="file" accept=".json" onchange="window.importRecipesAction(this.files[0])" hidden>
-            </label>
-        </div>
-    `;
-
     return html;
 }
 
@@ -52,11 +41,12 @@ export async function renderRecipesList() {
 function renderRecipeCard(recipe) {
     return `
         <article class="recipe-card">
-            <div class="header">
+            <div class="recipe-header">
                 <h4>${recipe.name}</h4>
+                <span class="recipe-meta">Zutaten (${recipe.ingredients.length})</span>
             </div>
             <details>
-                <summary>Zutaten (${recipe.ingredients.length})</summary>
+                <summary>Zutaten anzeigen</summary>
                 <ul class="ingredients">
                     ${recipe.ingredients.map(ing => `
                         <li>${ing.amount} ${ing.unit} ${ing.name}</li>

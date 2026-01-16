@@ -20,12 +20,16 @@ window.moveWeekplanItem = moveWeekplanItem;
 window.exportRecipesAction = exportRecipesAction;
 window.importRecipesAction = importRecipesAction;
 window.loadDefaultRecipes = loadDefaultRecipesAction;
+window.toggleTheme = toggleTheme;
 
 /**
  * App-Initialisierung
  */
 async function init() {
     console.log('🍳 HomeCooking App startet...');
+
+    // Theme laden
+    initTheme();
 
     // IndexedDB initialisieren
     await initDB();
@@ -69,6 +73,8 @@ async function router() {
         switch (hash) {
             case '/':
                 content = await renderDashboard();
+                // Initialize drag & drop if weekplan is shown
+                setTimeout(() => initWeekplanDragDrop(), 50);
                 break;
 
             case '/recipes':
@@ -81,10 +87,9 @@ async function router() {
                 break;
 
             case '/weekplan':
-                content = await renderWeekplan();
-                // Initialize drag & drop after content is rendered
-                setTimeout(() => initWeekplanDragDrop(), 50);
-                break;
+                // Redirect to Dashboard (merged view)
+                window.location.hash = '/';
+                return;
 
             case '/shopping':
                 content = await renderShoppingList();
@@ -92,6 +97,10 @@ async function router() {
 
             case '/discover':
                 content = await renderDiscover();
+                break;
+
+            case '/settings':
+                content = renderSettings();
                 break;
 
             default:
@@ -176,6 +185,62 @@ async function loadDefaultRecipesAction() {
     } catch (err) {
         alert('Fehler beim Laden: ' + err.message);
     }
+}
+
+/**
+ * Theme Management
+ */
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+}
+
+function toggleTheme() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+
+    // Update button text
+    const btn = document.getElementById('theme-toggle-btn');
+    if (btn) {
+        btn.textContent = newTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+    }
+}
+
+/**
+ * Einstellungen-Seite
+ */
+function renderSettings() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const buttonText = currentTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+
+    return `
+        <header class="page-header">
+            <h2>Einstellungen</h2>
+        </header>
+        <article>
+            <h4>Darstellung</h4>
+            <button id="theme-toggle-btn" onclick="window.toggleTheme()">${buttonText}</button>
+        </article>
+        <article>
+            <h4>Rezepte</h4>
+            <div class="settings-actions">
+                <button class="secondary" onclick="window.exportRecipesAction()">Exportieren</button>
+                <label class="secondary" role="button">
+                    Importieren
+                    <input type="file" accept=".json" onchange="window.importRecipesAction(this.files[0])" hidden>
+                </label>
+            </div>
+        </article>
+        <article>
+            <h4>Über die App</h4>
+            <p>Kochplaner - Dein persönlicher Wochenplaner für Mahlzeiten</p>
+            <small>Version 1.0</small>
+        </article>
+    `;
 }
 
 /**

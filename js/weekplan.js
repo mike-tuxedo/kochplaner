@@ -2,7 +2,7 @@
  * weekplan.js - Wochenplan-Generator
  */
 
-import { getAllRecipes, getRecipe } from './storage.js';
+import { getAllRecipes, getRecipe, generateUUID } from './storage.js';
 import { getSetting, setSetting, saveWeekplan, getWeekplan } from './storage.js';
 
 const DAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
@@ -54,7 +54,7 @@ export async function generateWeekplan() {
     }
 
     const weekplan = {
-        weekId: crypto.randomUUID(),
+        weekId: generateUUID(),
         startDate: monday.toISOString(),
         days
     };
@@ -85,7 +85,6 @@ export async function renderWeekplan() {
     let html = `
         <header class="page-header">
             <h2>Wochenplan</h2>
-            <button onclick="window.generateNewWeek()">Wochenplan erstellen</button>
         </header>
     `;
 
@@ -117,21 +116,23 @@ export async function renderWeekplan() {
                     <div class="drag-handle" title="Ziehen zum Verschieben">⋮⋮</div>
                     <button class="move-btn" ${isLast ? 'disabled' : ''} onclick="window.moveWeekplanItem(${i}, 1)" title="Nach unten">▼</button>
                 </div>
-                <div class="day-header">${day.dayName}</div>
-                <small>${dateStr}</small>
+                <div class="day-info">
+                    <span class="day-header" onclick="window.changeRecipeForDay('${day.dayName}')">${day.dayName} - ${recipe.name}</span>
+                    <small>${dateStr}</small>
+                </div>
                 ${recipe ? `
-                    <h4 class="recipe-name">${recipe.name}</h4>
-                    <details>
-                        <summary>Zutaten</summary>
-                        <ul>
-                            ${recipe.ingredients.map(ing => `
-                                <li>${ing.amount} ${ing.unit} ${ing.name}</li>
-                            `).join('')}
-                        </ul>
-                    </details>
-                    <button class="change-btn secondary" onclick="window.changeRecipeForDay('${day.dayName}')">
-                        Ändern
-                    </button>
+                    <div class="recipe-info">
+                        <details>
+                            <summary>Zutaten</summary>
+                            <ul>
+                                ${recipe.ingredients.map(ing => `
+                                    <li>${ing.amount} ${ing.unit} ${ing.name}</li>
+                                `).join('')}
+                            </ul>
+                        </details>
+                        <div class="spacer"></div>
+                    </div>
+
                 ` : `
                     <p><em>Kein Rezept</em></p>
                 `}
@@ -140,6 +141,8 @@ export async function renderWeekplan() {
     }
 
     html += '</div>';
+            
+    html += '<button class="create-weekplan" onclick="window.generateNewWeek()">Neuen Wochenplan erstellen</button>';
 
     return html;
 }
@@ -324,51 +327,39 @@ export async function changeRecipeForDay(dayName) {
 }
 
 /**
- * Rendert das Dashboard (Übersicht)
+ * Rendert das Dashboard (zeigt Wochenplan direkt an)
  */
 export async function renderDashboard() {
     const weekplan = await getCurrentWeekplan();
     const recipes = await getAllRecipes();
 
-    let html = '';
+    // Wenn Wochenplan existiert, zeige ihn direkt an
+    if (weekplan) {
+        return await renderWeekplan();
+    }
 
-    if (!weekplan) {
-        html += `
-            <article>
-                <h3>Erste Schritte</h3>
-                <p>1. Füge deine Lieblingsrezepte hinzu</p>
-                <p>2. Generiere einen Wochenplan</p>
-                <p>3. Erstelle deine Einkaufsliste</p>
-                <br>
+    // Kein Wochenplan - zeige Onboarding
+    let html = `
+        <header class="page-header">
+            <h2>Wochenplan</h2>
+        </header>
+        <article class="onboarding" style="text-align: left;">
+            <h3>Willkommen beim Kochplaner!</h3>
+            <p>In 3 Schritten zu deinem Wochenplan:</p>
+            <ol>
+                <li>Füge deine Lieblingsrezepte hinzu</li>
+                <li>Generiere einen Wochenplan</li>
+                <li>Erstelle deine Einkaufsliste</li>
+            </ol>
+            <div class="cta-buttons" style="margin-top: 1.5rem; justify-content: flex-start;">
                 ${recipes.length === 0 ? `
                     <button onclick="window.loadDefaultRecipes()">📥 Standardrezepte laden</button>
-                    <p style="margin-top: 1rem"><small>oder</small></p>
-                ` : ''}
-                <a href="#/recipes" role="button" class="secondary">Eigene Rezepte hinzufügen</a>
-            </article>
-        `;
-    } else {
-        html += `
-            <article>
-                <h3>Dein Wochenplan</h3>
-                <p>Aktuelle Woche ab ${new Date(weekplan.startDate).toLocaleDateString('de-DE')}</p>
-                <div class="cta-buttons">
-                    <a href="#/weekplan" role="button">Zum Wochenplan</a>
-                    <a href="#/shopping" role="button" class="secondary">Zur Einkaufsliste</a>
-                </div>
-            </article>
-        `;
-
-        // Quick-Preview der nächsten 3 Tage
-        html += '<h4>Die nächsten Tage:</h4>';
-        for (let i = 0; i < Math.min(3, weekplan.days.length); i++) {
-            const day = weekplan.days[i];
-            const recipe = await getRecipe(day.recipeId);
-            if (recipe) {
-                html += `<p><strong>${day.dayName}:</strong> ${recipe.name}</p>`;
-            }
-        }
-    }
+                ` : `
+                    <button onclick="window.generateNewWeek()">🎲 Wochenplan erstellen</button>
+                `}
+            </div>
+        </article>
+    `;
 
     return html;
 }

@@ -123,27 +123,31 @@ export async function shareShoppingList() {
 
     text += '\n—\nErstellt mit Kochplaner';
 
-    // Web Share API verwenden wenn verfügbar
-    if (navigator.share) {
+    // Web Share API verwenden wenn verfügbar (nur in sicheren Kontexten)
+    const shareData = { title: 'Einkaufsliste', text: text };
+    const canShare = typeof navigator.share === 'function' &&
+                     (!navigator.canShare || navigator.canShare(shareData));
+
+    if (canShare) {
         try {
-            await navigator.share({
-                title: 'Einkaufsliste',
-                text: text
-            });
+            await navigator.share(shareData);
+            return;
         } catch (err) {
             // User hat abgebrochen - kein Fehler
-            if (err.name !== 'AbortError') {
-                console.error('Share error:', err);
+            if (err.name === 'AbortError') {
+                return;
             }
+            console.error('Share error:', err);
+            // Fallthrough zum Clipboard-Fallback
         }
-    } else {
-        // Fallback: Text in Zwischenablage kopieren
-        try {
-            await navigator.clipboard.writeText(text);
-            alert('Einkaufsliste in Zwischenablage kopiert!');
-        } catch (err) {
-            // Letzter Fallback: Text anzeigen
-            alert(text);
-        }
+    }
+
+    // Fallback: Text in Zwischenablage kopieren
+    try {
+        await navigator.clipboard.writeText(text);
+        alert('Einkaufsliste in Zwischenablage kopiert!');
+    } catch (err) {
+        // Letzter Fallback: Text anzeigen
+        alert(text);
     }
 }
