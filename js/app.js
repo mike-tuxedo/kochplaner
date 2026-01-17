@@ -384,4 +384,150 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// ==========================================
+// PWA Install Prompt Handler
+// ==========================================
+let deferredInstallPrompt = null;
+let isAppInstalled = false;
+
+// Check if app is running in standalone mode
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+
+// Check if app is installed (more reliable method)
+async function checkIfInstalled() {
+    // Already in standalone = definitely installed
+    if (isStandalone) return true;
+
+    // Use getInstalledRelatedApps API if available
+    if ('getInstalledRelatedApps' in navigator) {
+        try {
+            const relatedApps = await navigator.getInstalledRelatedApps();
+            if (relatedApps.length > 0) {
+                console.log('[App] App is installed:', relatedApps);
+                return true;
+            }
+        } catch (e) {
+            console.log('[App] getInstalledRelatedApps not supported');
+        }
+    }
+
+    return false;
+}
+
+// Run install check
+checkIfInstalled().then(installed => {
+    isAppInstalled = installed;
+    store.canInstall = !installed;
+    console.log('[App] Install status:', installed ? 'installed' : 'not installed');
+});
+
+// Check if user dismissed install prompt before
+const installDismissed = localStorage.getItem('installDismissed');
+
+// Detect iOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+// Store the install prompt event
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    console.log('[App] Install prompt available');
+
+    // Show install modal if not dismissed and not standalone
+    if (!installDismissed && !isStandalone) {
+        showInstallModal();
+    }
+});
+
+// Show install modal
+async function showInstallModal() {
+    // Wait for modal component to be ready
+    await new Promise(r => setTimeout(r, 500));
+
+    const isIOSDevice = isIOS;
+    let html;
+
+    if (isIOSDevice) {
+        html = `
+            <p>Installiere die App für schnelleren Zugriff und Offline-Nutzung.</p>
+            <p style="margin-top: 1rem;"><strong>So geht's auf iOS:</strong></p>
+            <ol style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                <li>Tippe auf das Teilen-Symbol <span style="font-size: 1.2em;">⎙</span></li>
+                <li>Scrolle und wähle "Zum Home-Bildschirm"</li>
+            </ol>
+        `;
+    } else {
+        html = `<p>Installiere die App für schnelleren Zugriff und Offline-Nutzung.</p>`;
+    }
+
+    const result = await modal().custom({
+        title: 'App installieren?',
+        html,
+        confirmText: isIOSDevice ? 'Verstanden' : 'Installieren',
+        cancelText: 'Später',
+        showCancel: true
+    });
+
+    if (result) {
+        if (!isIOSDevice && deferredInstallPrompt) {
+            // Trigger install prompt on Android/Desktop
+            deferredInstallPrompt.prompt();
+            const { outcome } = await deferredInstallPrompt.userChoice;
+            console.log('[App] Install outcome:', outcome);
+            deferredInstallPrompt = null;
+        }
+    } else {
+        // User chose "Later" - remember this
+        localStorage.setItem('installDismissed', 'true');
+    }
+}
+
+// Manual install function for Settings page
+window.installApp = async function() {
+    if (isStandalone || isAppInstalled) {
+        await modal().alert('App ist bereits installiert!');
+        return;
+    }
+
+    if (isIOS) {
+        await modal().custom({
+            title: 'App installieren',
+            html: `
+                <p><strong>So installierst du auf iOS:</strong></p>
+                <ol style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                    <li>Tippe auf das Teilen-Symbol <span style="font-size: 1.2em;">⎙</span></li>
+                    <li>Scrolle und wähle "Zum Home-Bildschirm"</li>
+                </ol>
+            `,
+            confirmText: 'Verstanden',
+            showCancel: false
+        });
+        return;
+    }
+
+    if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        const { outcome } = await deferredInstallPrompt.userChoice;
+        console.log('[App] Install outcome:', outcome);
+        if (outcome === 'accepted') {
+            deferredInstallPrompt = null;
+        }
+    } else {
+        await modal().alert(
+            'Installation nicht verfügbar',
+            'Öffne die App im Browser und versuche es erneut.'
+        );
+    }
+};
+
+// Check if app can be installed (for Settings button visibility)
+window.canInstallApp = function() {
+    return !isStandalone && (deferredInstallPrompt !== null || isIOS);
+};
+
+// Update store with install capability
+store.canInstall = !isStandalone;
+store.isStandalone = isStandalone;
+
 console.log('[App] Ready!');

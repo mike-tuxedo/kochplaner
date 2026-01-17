@@ -32,6 +32,14 @@
     <button class="secondary" @click="loadDefaultRecipes()">Standardrezepte laden</button>
 </article>
 
+<article class="settings-section" v-if="canInstall">
+    <hgroup>
+        <h4>App installieren</h4>
+        <p>Installiere die App auf deinem Gerät für schnelleren Zugriff und Offline-Nutzung.</p>
+    </hgroup>
+    <button @click="window.installApp()">App installieren</button>
+</article>
+
 <article class="settings-section">
     <h4>Über die App</h4>
     <p>Kochplaner - Dein persönlicher Wochenplaner für Mahlzeiten</p>
