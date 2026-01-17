@@ -32,7 +32,7 @@ console.log('[App] Database initialized');
 // Days of week
 const DAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 
-// Hash routing maps
+// Hash routing maps (page 0 = welcome, not in hash routing)
 const hashToPage = {
     '#plan': 1, '#': 1, '': 1,
     '#recipes': 2,
@@ -46,7 +46,15 @@ const pageToHash = {
     4: '#settings'
 };
 
+// Check if welcome page should be shown
+const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+const welcomeSkipped = localStorage.getItem('welcomeSkipped');
+const showWelcome = !isStandaloneMode && !welcomeSkipped;
+
 function getPageFromHash() {
+    // Show welcome page on first visit if not installed
+    if (showWelcome) return 0;
     const hash = window.location.hash || '#plan';
     return hashToPage[hash] || 1;
 }
@@ -54,10 +62,17 @@ function getPageFromHash() {
 /**
  * Reactive Store
  */
+// Detect iOS for welcome page hint
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
 const store = reactive({
     // Navigation
     activePage: getPageFromHash(),
     theme: localStorage.getItem('theme') || 'dark',
+
+    // Welcome page
+    isIOSDevice: isIOS,
+    canInstall: !isStandaloneMode,
 
     // Data
     recipes: [],
@@ -82,13 +97,21 @@ const store = reactive({
         this.editingRecipe = {
             id: null,
             name: '',
+            description: '',
+            photo: null,
             ingredients: [{ name: '', amount: '', unit: '' }]
         };
         $id('recipeEditDrawer')?.open();
     },
 
     editRecipe(recipe) {
-        this.editingRecipe = JSON.parse(JSON.stringify(recipe));
+        const parsed = JSON.parse(JSON.stringify(recipe));
+        // Ensure optional fields have default values
+        this.editingRecipe = {
+            description: '',
+            photo: null,
+            ...parsed
+        };
         $id('recipeEditDrawer')?.open();
     },
 
@@ -181,6 +204,248 @@ const store = reactive({
         } catch (err) {
             await modal().alert('Fehler: ' + err.message);
         }
+    },
+
+    async resetAllData() {
+        const confirmed = await modal().confirm(
+            'Wirklich alle Daten löschen?',
+            'Alle Rezepte und Wochenpläne werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden!'
+        );
+        if (!confirmed) return;
+
+        try {
+            // Delete all recipes
+            for (const recipe of this.recipes) {
+                await deleteRecipeFromDB(recipe.id);
+            }
+            // Clear weekplan
+            this.weekplan = null;
+            await setSetting('currentWeekId', null);
+            // Reload
+            await this.loadRecipes();
+            this.generateShoppingList();
+            await modal().alert('Alle Daten wurden gelöscht.');
+        } catch (err) {
+            await modal().alert('Fehler: ' + err.message);
+        }
+    },
+
+    // === PHOTO HANDLING ===
+    async handlePhotoUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        try {
+            const compressedBase64 = await compressImage(file, {
+                maxWidth: 800,
+                maxHeight: 800,
+                quality: 0.7
+            });
+            this.editingRecipe.photo = compressedBase64;
+        } catch (err) {
+            console.error('Fehler beim Bildupload:', err);
+            await modal().alert('Fehler beim Verarbeiten des Bildes.');
+        }
+        event.target.value = '';
+    },
+
+    removePhoto() {
+        this.editingRecipe.photo = null;
+    },
+
+    // === TOAST ===
+    toastVisible: false,
+    toastMessage: '',
+
+    // === RECIPE SUGGESTIONS ===
+    suggestedRecipe: null,
+
+    async showSuggestionDrawer() {
+        await this.getNewSuggestion();
+        $id('suggestionDrawer')?.open();
+    },
+
+    // Translate text using MyMemory API (free: 1000 words/day, max 500 chars/request)
+    async translateToGerman(text) {
+        if (!text) return '';
+
+        // MyMemory has 500 char limit per request, split long texts
+        const MAX_CHARS = 450;
+
+        const translateChunk = async (chunk) => {
+            try {
+                const response = await fetch(
+                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=en|de`
+                );
+                const data = await response.json();
+                if (data.responseStatus === 200 && data.responseData?.translatedText) {
+                    return data.responseData.translatedText;
+                }
+            } catch (err) {
+                console.warn('Übersetzung fehlgeschlagen:', err);
+            }
+            return chunk;
+        };
+
+        // Short text: translate directly
+        if (text.length <= MAX_CHARS) {
+            return translateChunk(text);
+        }
+
+        // Long text: split by sentences and translate in chunks
+        const sentences = text.split(/(?<=[.!?])\s+/);
+        const chunks = [];
+        let currentChunk = '';
+
+        for (const sentence of sentences) {
+            if ((currentChunk + ' ' + sentence).length > MAX_CHARS && currentChunk) {
+                chunks.push(currentChunk.trim());
+                currentChunk = sentence;
+            } else {
+                currentChunk += (currentChunk ? ' ' : '') + sentence;
+            }
+        }
+        if (currentChunk) chunks.push(currentChunk.trim());
+
+        // Translate all chunks in parallel
+        const translatedChunks = await Promise.all(chunks.map(translateChunk));
+        return translatedChunks.join(' ');
+    },
+
+    async getNewSuggestion() {
+        try {
+            // Use TheMealDB API for random recipes
+            const response = await fetch('https://www.themealdb.com/api/json/v1/1/random.php');
+            if (!response.ok) throw new Error('API nicht erreichbar');
+            const data = await response.json();
+            const meal = data.meals?.[0];
+            if (!meal) throw new Error('Kein Rezept gefunden');
+
+            // Convert TheMealDB format to our format
+            const ingredients = [];
+            for (let i = 1; i <= 20; i++) {
+                const name = meal[`strIngredient${i}`];
+                const measure = meal[`strMeasure${i}`]?.trim() || '';
+                if (name && name.trim()) {
+                    // Parse measure into amount and unit
+                    const parsed = this.parseMeasure(measure);
+                    ingredients.push({
+                        name: name.trim(),
+                        amount: parsed.amount,
+                        unit: parsed.unit
+                    });
+                }
+            }
+
+            // Translate name, instructions and ingredients to German
+            const [translatedName, translatedInstructions, ...translatedIngredientNames] = await Promise.all([
+                this.translateToGerman(meal.strMeal),
+                this.translateToGerman(meal.strInstructions || ''),
+                ...ingredients.map(ing => this.translateToGerman(ing.name))
+            ]);
+
+            // Update ingredient names with translations
+            ingredients.forEach((ing, i) => {
+                ing.name = translatedIngredientNames[i];
+            });
+
+            this.suggestedRecipe = {
+                name: translatedName,
+                description: translatedInstructions,
+                ingredients,
+                photo: meal.strMealThumb
+            };
+        } catch (err) {
+            console.error('Fehler beim Laden der Vorschläge:', err);
+            // Fallback to local suggestions
+            try {
+                const response = await fetch('rezepte-vorschlaege.json');
+                const suggestions = await response.json();
+                if (suggestions.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * suggestions.length);
+                    this.suggestedRecipe = suggestions[randomIndex];
+                    return;
+                }
+            } catch { }
+            this.suggestedRecipe = null;
+        }
+    },
+
+    // Parse measure string like "200g", "1 cup", "1/2 tsp" into amount and unit
+    parseMeasure(measure) {
+        if (!measure) return { amount: '', unit: '' };
+
+        // English to German unit translations
+        const unitTranslations = {
+            // Volume
+            'cup': 'Tasse', 'cups': 'Tassen', '1/2 cup': '1/2 Tasse', '1/4 cup': '1/4 Tasse',
+            'tsp': 'TL', 'teaspoon': 'TL', 'teaspoons': 'TL',
+            'tbsp': 'EL', 'tbs': 'EL', 'tablespoon': 'EL', 'tablespoons': 'EL',
+            'ml': 'ml', 'l': 'l', 'liter': 'l', 'liters': 'l',
+            'drop': 'Tropfen', 'drops': 'Tropfen',
+            // Weight
+            'g': 'g', 'gram': 'g', 'grams': 'g',
+            'kg': 'kg', 'kilogram': 'kg',
+            'oz': 'g', 'ounce': 'g', 'ounces': 'g',
+            'lb': 'Pfund', 'lbs': 'Pfund', 'pound': 'Pfund', 'pounds': 'Pfund',
+            // Count/Pieces
+            'piece': 'Stück', 'pieces': 'Stück', 'pcs': 'Stück',
+            'slice': 'Scheibe', 'slices': 'Scheiben', 'sliced': 'Scheibe',
+            'clove': 'Zehe', 'cloves': 'Zehen',
+            'can': 'Dose', 'cans': 'Dosen', 'tin': 'Dose',
+            'bunch': 'Bund', 'bunches': 'Bund',
+            'sprig': 'Zweig', 'sprigs': 'Zweige',
+            'leaf': 'Blatt', 'leaves': 'Blätter',
+            'head': 'Kopf', 'heads': 'Köpfe',
+            'stalk': 'Stange', 'stalks': 'Stangen',
+            // Descriptive
+            'pinch': 'Prise', 'handful': 'Handvoll',
+            'dash': 'Spritzer', 'splash': 'Schuss',
+            'sprinkling': 'etwas', 'sprinkle': 'etwas',
+            'large': 'groß', 'medium': 'mittel', 'small': 'klein',
+            'to taste': 'nach Geschmack',
+        };
+
+        const translateUnit = (unit) => {
+            const lower = unit.toLowerCase();
+            return unitTranslations[lower] || unit;
+        };
+
+        // Match number (including fractions) followed by optional unit
+        const match = measure.match(/^([\d.,\/]+)\s*(.*)$/);
+        if (match) {
+            let amount = match[1].trim();
+            let unit = translateUnit(match[2].trim());
+
+            // Convert fractions like "1/2" to decimal
+            if (amount.includes('/')) {
+                const parts = amount.split('/');
+                if (parts.length === 2) {
+                    const num = parseFloat(parts[0]);
+                    const denom = parseFloat(parts[1]);
+                    if (!isNaN(num) && !isNaN(denom) && denom !== 0) {
+                        amount = (num / denom).toFixed(2).replace(/\.?0+$/, '');
+                    }
+                }
+            }
+
+            return { amount, unit };
+        }
+
+        // No number found, treat entire string as unit (e.g., "pinch", "to taste")
+        return { amount: '', unit: translateUnit(measure) };
+    },
+
+    async adoptSuggestion() {
+        if (!this.suggestedRecipe) return;
+
+        // Convert reactive proxy to plain object for IndexedDB
+        const recipe = JSON.parse(JSON.stringify(this.suggestedRecipe));
+        recipe.id = null;
+        await saveRecipe(recipe);
+        await this.loadRecipes();
+        $id('suggestionDrawer')?.close();
+        await modal().alert('Rezept wurde zu deiner Sammlung hinzugefügt!');
     },
 
     // === WEEKPLAN ACTIONS ===
@@ -377,115 +642,96 @@ window.darkLightToggle = function () {
 
 // Register Service Worker
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(() => console.log('[App] Service Worker registered'))
-            .catch(err => console.error('[App] SW registration failed:', err));
+    window.addEventListener('load', async () => {
+        try {
+            await navigator.serviceWorker.register('./sw.js');
+            console.log('[App] Service Worker registered');
+        } catch (err) {
+            console.error('[App] SW registration failed:', err);
+        }
     });
+}
+
+// Check for app updates via version in localStorage
+const APP_VERSION = '1.4';
+const lastVersion = localStorage.getItem('appVersion');
+if (lastVersion && lastVersion !== APP_VERSION) {
+    // Show toast after a short delay to ensure DOM is ready
+    setTimeout(() => showToast('App wurde aktualisiert'), 1000);
+}
+localStorage.setItem('appVersion', APP_VERSION);
+
+// Simple toast notification
+function showToast(message, duration = 3000) {
+    store.toastMessage = message;
+    store.toastVisible = true;
+
+    setTimeout(() => {
+        store.toastVisible = false;
+    }, duration);
 }
 
 // ==========================================
 // PWA Install Prompt Handler
 // ==========================================
 let deferredInstallPrompt = null;
-let isAppInstalled = false;
-
-// Check if app is running in standalone mode
-const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-    || window.navigator.standalone === true;
-
-// Check if app is installed (more reliable method)
-async function checkIfInstalled() {
-    // Already in standalone = definitely installed
-    if (isStandalone) return true;
-
-    // Use getInstalledRelatedApps API if available
-    if ('getInstalledRelatedApps' in navigator) {
-        try {
-            const relatedApps = await navigator.getInstalledRelatedApps();
-            if (relatedApps.length > 0) {
-                console.log('[App] App is installed:', relatedApps);
-                return true;
-            }
-        } catch (e) {
-            console.log('[App] getInstalledRelatedApps not supported');
-        }
-    }
-
-    return false;
-}
-
-// Run install check
-checkIfInstalled().then(installed => {
-    isAppInstalled = installed;
-    store.canInstall = !installed;
-    console.log('[App] Install status:', installed ? 'installed' : 'not installed');
-});
-
-// Check if user dismissed install prompt before
-const installDismissed = localStorage.getItem('installDismissed');
-
-// Detect iOS
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
 // Store the install prompt event
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredInstallPrompt = e;
     console.log('[App] Install prompt available');
-
-    // Show install modal if not dismissed and not standalone
-    if (!installDismissed && !isStandalone) {
-        showInstallModal();
-    }
 });
 
-// Show install modal
-async function showInstallModal() {
-    // Wait for modal component to be ready
-    await new Promise(r => setTimeout(r, 500));
-
-    const isIOSDevice = isIOS;
-    let html;
-
-    if (isIOSDevice) {
-        html = `
-            <p>Installiere die App für schnelleren Zugriff und Offline-Nutzung.</p>
-            <p style="margin-top: 1rem;"><strong>So geht's auf iOS:</strong></p>
-            <ol style="margin: 0.5rem 0; padding-left: 1.5rem;">
-                <li>Tippe auf das Teilen-Symbol <span style="font-size: 1.2em;">⎙</span></li>
-                <li>Scrolle und wähle "Zum Home-Bildschirm"</li>
-            </ol>
-        `;
-    } else {
-        html = `<p>Installiere die App für schnelleren Zugriff und Offline-Nutzung.</p>`;
-    }
-
-    const result = await modal().custom({
-        title: 'App installieren?',
-        html,
-        confirmText: isIOSDevice ? 'Verstanden' : 'Installieren',
-        cancelText: 'Später',
-        showCancel: true
-    });
-
-    if (result) {
-        if (!isIOSDevice && deferredInstallPrompt) {
-            // Trigger install prompt on Android/Desktop
-            deferredInstallPrompt.prompt();
-            const { outcome } = await deferredInstallPrompt.userChoice;
-            console.log('[App] Install outcome:', outcome);
+// Welcome page: Install and start
+store.installAndStart = async function() {
+    if (isIOS) {
+        // iOS: Show instructions, then go to app
+        await modal().custom({
+            title: 'App installieren',
+            html: `
+                <p><strong>So installierst du auf iOS:</strong></p>
+                <ol style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                    <li>Tippe auf das Teilen-Symbol <span style="font-size: 1.1em;">&#9094;</span></li>
+                    <li>Scrolle und wähle "Zum Home-Bildschirm"</li>
+                </ol>
+            `,
+            confirmText: 'Verstanden',
+            showCancel: false
+        });
+        localStorage.setItem('welcomeSkipped', 'true');
+        store.activePage = 1;
+        history.replaceState(null, '', '#plan');
+    } else if (deferredInstallPrompt) {
+        // Android/Desktop: Trigger native install prompt
+        deferredInstallPrompt.prompt();
+        const { outcome } = await deferredInstallPrompt.userChoice;
+        console.log('[App] Install outcome:', outcome);
+        if (outcome === 'accepted') {
             deferredInstallPrompt = null;
         }
+        // Go to app regardless of outcome
+        localStorage.setItem('welcomeSkipped', 'true');
+        store.activePage = 1;
+        history.replaceState(null, '', '#plan');
     } else {
-        // User chose "Later" - remember this
-        localStorage.setItem('installDismissed', 'true');
+        // No install prompt available, just go to app
+        localStorage.setItem('welcomeSkipped', 'true');
+        store.activePage = 1;
+        history.replaceState(null, '', '#plan');
     }
-}
+};
+
+// Welcome page: Skip install
+store.skipInstall = function() {
+    localStorage.setItem('welcomeSkipped', 'true');
+    store.activePage = 1;
+    history.replaceState(null, '', '#plan');
+};
 
 // Manual install function for Settings page
 window.installApp = async function() {
-    if (isStandalone || isAppInstalled) {
+    if (isStandaloneMode) {
         await modal().alert('App ist bereits installiert!');
         return;
     }
@@ -496,7 +742,7 @@ window.installApp = async function() {
             html: `
                 <p><strong>So installierst du auf iOS:</strong></p>
                 <ol style="margin: 0.5rem 0; padding-left: 1.5rem;">
-                    <li>Tippe auf das Teilen-Symbol <span style="font-size: 1.2em;">⎙</span></li>
+                    <li>Tippe auf das Teilen-Symbol <span style="font-size: 1.1em;">&#9094;</span></li>
                     <li>Scrolle und wähle "Zum Home-Bildschirm"</li>
                 </ol>
             `,
@@ -520,14 +766,5 @@ window.installApp = async function() {
         );
     }
 };
-
-// Check if app can be installed (for Settings button visibility)
-window.canInstallApp = function() {
-    return !isStandalone && (deferredInstallPrompt !== null || isIOS);
-};
-
-// Update store with install capability
-store.canInstall = !isStandalone;
-store.isStandalone = isStandalone;
 
 console.log('[App] Ready!');

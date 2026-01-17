@@ -7,6 +7,10 @@ html {
     overflow: hidden;
     height: 100%;
 
+    * {
+        scroll-behavior: smooth;
+    }
+
     body {
         display: grid;
         grid-template-columns: 1fr;
@@ -15,7 +19,7 @@ html {
         background: var(--custom-body-background);
         overflow: hidden;
     }
-    
+
     /* ==========================================
     Layout: Main & Pages
     ========================================== */
@@ -120,6 +124,14 @@ html {
     }
 
     /* ==========================================
+    Generell Defaults
+    ========================================== */
+    button svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* ==========================================
        Drawer Component
        ========================================== */
     app-drawer {
@@ -214,9 +226,21 @@ html {
         justify-content: space-between;
         align-items: center;
         margin-bottom: 1rem;
-        
+
         h2 {
             margin-bottom: 2rem;
+        }
+
+        .page-header-actions {
+            display: flex;
+            gap: 0.5rem;
+
+            button {
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+                white-space: nowrap;
+            }
         }
 
         @media (max-width: 500px) {
@@ -224,6 +248,10 @@ html {
             align-items: stretch;
             gap: 0.75rem;
             text-align: center;
+
+            .page-header-actions {
+                flex-direction: column;
+            }
         }
     }
 
@@ -238,6 +266,39 @@ html {
         border-radius: var(--pico-border-radius);
         margin-bottom: 0.75rem;
         transition: border-color 0.2s;
+
+        &.has-photo {
+            display: flex;
+            gap: 1rem;
+            padding: 0;
+            overflow: hidden;
+
+            .recipe-card-photo {
+                width: 120px;
+                height: 120px;
+                object-fit: cover;
+                flex-shrink: 0;
+            }
+
+            .recipe-card-content {
+                padding: 1rem 1rem 1rem 0;
+                flex: 1;
+                min-width: 0;
+            }
+
+            @media (max-width: 500px) {
+                flex-direction: column;
+
+                .recipe-card-photo {
+                    width: 100%;
+                    height: 150px;
+                }
+
+                .recipe-card-content {
+                    padding: 0 1rem 1rem 1rem;
+                }
+            }
+        }
 
         &:hover {
             border-color: var(--pico-primary);
@@ -257,6 +318,15 @@ html {
                 color: var(--pico-muted-color);
                 font-size: 0.875rem;
             }
+        }
+
+        .recipe-description {
+            color: var(--pico-muted-color);
+            font-size: 0.875rem;
+            margin: 0 0 0.5rem 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         details summary {
@@ -402,6 +472,7 @@ html {
                         }
                     }
                 }
+
                 .ingredient-delete {
                     height: 44px;
                 }
@@ -422,6 +493,45 @@ html {
                 margin-right: auto;
             }
         }
+
+        .recipe-photo-upload {
+            margin-bottom: 1rem;
+
+            .photo-preview {
+                position: relative;
+                display: inline-block;
+                max-width: 200px;
+
+                img {
+                    width: 100%;
+                    height: auto;
+                    border-radius: var(--pico-border-radius);
+                    border: 1px solid var(--pico-muted-border-color);
+                }
+
+                .photo-remove {
+                    position: absolute;
+                    top: -8px;
+                    right: -8px;
+                    width: 28px;
+                    height: 28px;
+                    padding: 0;
+                    border-radius: 50%;
+                    font-size: 1.2rem;
+                    line-height: 1;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+            }
+
+            .photo-upload-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                cursor: pointer;
+            }
+        }
     }
 
     /* ==========================================
@@ -431,13 +541,6 @@ html {
         text-align: center;
         padding: 2rem 1rem;
         color: var(--pico-muted-color);
-
-        svg {
-            width: 64px;
-            height: 64px;
-            margin-bottom: 1rem;
-            opacity: 0.3;
-        }
     }
 
     /* ==========================================
@@ -449,6 +552,21 @@ html {
 
         h4 {
             margin-bottom: 0.5rem;
+        }
+
+        &.danger-zone {
+            border: 1px solid var(--pico-del-color);
+            border-radius: var(--pico-border-radius);
+            padding: 1rem;
+
+            h4 {
+                color: var(--pico-del-color);
+            }
+
+            button {
+                --pico-background-color: var(--pico-del-color);
+                --pico-border-color: var(--pico-del-color);
+            }
         }
     }
 
@@ -464,8 +582,180 @@ html {
     }
 
     /* ==========================================
-       Drawer Recipe List
+       Welcome Page
        ========================================== */
+    .page-welcome {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 4rem;
+
+        section {
+            margin-bottom: 10rem;
+        }
+
+        .welcome-page-stage {
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+
+            .welcome-icon {
+                margin-bottom: 1.5rem;
+
+                img {
+                    width: 100px;
+                    height: 100px;
+                    border-radius: 20px;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+                }
+            }
+
+            h1 {
+                margin-bottom: 1rem;
+                color: var(--pico-primary);
+            }
+
+            .welcome-tagline {
+                color: var(--pico-muted-color);
+                margin-bottom: 4rem;
+            }
+
+            .welcome-stage {
+                gap: 4rem;
+                align-items: center;
+                padding-bottom: 5rem;
+            }
+
+            .welcome-features {
+                text-align: left;
+                margin-bottom: 2rem;
+
+                .feature {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    padding: 0.5rem 0;
+                    border-bottom: 1px solid var(--pico-muted-border-color);
+
+                    &:last-child {
+                        border-bottom: none;
+                    }
+
+                    .feature-icon {
+                        font-size: 1.25rem;
+                        width: 2rem;
+                        text-align: center;
+                    }
+                }
+            }
+
+            .welcome-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+
+                button {
+                    width: 100%;
+                    margin: 0;
+                }
+
+                .welcome-btn-primary {
+                    font-weight: 600;
+                }
+
+                .welcome-btn-secondary {
+                    background: transparent;
+                }
+            }
+
+            .welcome-hint {
+                margin-top: 1.5rem;
+                padding: 1rem;
+                background: var(--pico-card-background-color);
+                border-radius: var(--pico-border-radius);
+                color: var(--pico-muted-color);
+            }
+
+            .showmore {
+                position: absolute;
+                animation: bounce 1.5s ease-in-out infinite;
+                text-decoration: none;
+
+                svg {
+                    width: 32px;
+                }
+            }
+        }
+
+        .welcome-page-features {
+            max-width: 1200px;
+
+            #features {
+                visibility: hidden;
+                translate: 0 -100px;
+            }
+
+            h2 {
+                margin-bottom: 4rem;
+                color: var(--pico-primary);
+            }
+
+            .feature-teaser {
+                display: flex;
+                align-items: center;
+                gap: 10rem;
+                margin-bottom: 6rem;
+
+                &.reverse {
+                    flex-direction: row-reverse;
+                }
+
+                .feature-teaser-image {
+                    flex: 0 0 40%;
+
+                    img {
+                        width: 100%;
+                        height: auto;
+                        border-radius: var(--pico-border-radius);
+                        max-height: 20vw;
+                    }
+                }
+
+                .feature-teaser-content {
+                    flex: 1;
+
+                    h3 {
+                        margin-bottom: 0.5rem;
+                        color: var(--pico-primary);
+                    }
+
+                    p {
+                        color: var(--pico-muted-color);
+                        line-height: 1.6;
+                    }
+                }
+            }
+
+            @media (max-width: 768px) {
+
+                .feature-teaser,
+                .feature-teaser.reverse {
+                    flex-direction: column;
+                    text-align: center;
+
+                    .feature-teaser-image {
+                        flex: 0 0 auto;
+                        max-width: 300px;
+                        margin: 0 auto;
+                    }
+                }
+            }
+        }
+    }
+
+    /* ==========================================
+    Drawer Recipe List
+========================================== */
     .drawer-recipe-list {
         .drawer-recipe-item {
             padding: 0.75rem;
@@ -483,8 +773,92 @@ html {
     }
 
     /* ==========================================
-       Modal Component
-       ========================================== */
+    Suggestion Drawer
+========================================== */
+    .suggestion-content {
+        .suggestion-card {
+            background: var(--pico-card-background-color);
+            border: 1px solid var(--pico-muted-border-color);
+            border-radius: var(--pico-border-radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+
+            &.has-photo {
+                display: flex;
+                gap: 1rem;
+                padding: 0;
+                overflow: hidden;
+
+                .suggestion-photo {
+                    width: 140px;
+                    height: 140px;
+                    object-fit: cover;
+                    flex-shrink: 0;
+                }
+
+                .suggestion-card-content {
+                    padding: 1rem 1rem 1rem 0;
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                @media (max-width: 500px) {
+                    flex-direction: column;
+
+                    .suggestion-photo {
+                        width: 100%;
+                        height: 180px;
+                    }
+
+                    .suggestion-card-content {
+                        padding: 0 1rem 1rem 1rem;
+                    }
+                }
+            }
+
+            h4 {
+                margin: 0 0 0.5rem 0;
+                color: var(--pico-primary);
+            }
+
+            .suggestion-description {
+                color: var(--pico-muted-color);
+                font-size: 0.9rem;
+                margin-bottom: 0.75rem;
+            }
+
+            details summary {
+                color: var(--pico-muted-color);
+                font-size: 0.875rem;
+            }
+
+            .ingredients {
+                padding-left: 1rem;
+                margin: 0.5rem 0 0 0;
+
+                li {
+                    margin-bottom: 0.25rem;
+                }
+            }
+        }
+
+        .suggestion-actions {
+            display: flex;
+            gap: 0.75rem;
+
+            button {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.35rem;
+            }
+        }
+    }
+
+    /* ==========================================
+    Modal Component
+========================================== */
     app-modal {
         position: fixed;
         top: 0;
@@ -538,7 +912,8 @@ html {
                     margin-bottom: 0.5rem;
                 }
 
-                ol, ul {
+                ol,
+                ul {
                     margin: 0.5rem 0;
                     padding-left: 1.5rem;
 
@@ -570,8 +945,47 @@ html {
     }
 
     /* ==========================================
-       Helper Classes
-       ========================================== */
+    Toast Notification
+========================================== */
+.toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(30px);
+    background: var(--pico-primary);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--pico-border-radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 2000;
+    font-size: 0.9rem;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    &.show {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateX(-50%) translateY(0);
+        animation: toastIn 0.4s ease;
+    }
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+    /* ==========================================
+    Helper Classes
+========================================== */
     .hide {
         display: none !important;
     }
@@ -580,27 +994,41 @@ html {
     .text-center {
         text-align: center;
     }
+
     .text-left {
         text-align: left;
     }
+
+    .init-content-1 {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
     .mt-0 {
         margin-top: 0rem;
     }
+
     .mb-0 {
         margin-bottom: 0rem;
     }
+
     .mt-1 {
         margin-top: 1rem;
     }
+
     .mb-1 {
         margin-bottom: 1rem;
     }
+
     .mt-2 {
         margin-top: 2rem;
     }
+
     .mb-2 {
         margin-bottom: 2rem;
     }
+
     .btn-small {
         padding: 0.2rem 0.5rem;
     }
@@ -608,5 +1036,19 @@ html {
     /* Color */
     .text-primary {
         color: var(--pico-primary);
+    }
+}
+
+/* ==========================================
+    Animations
+========================================== */
+@keyframes bounce {
+    0%,
+    100% {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    50% {
+        transform: translateX(-50%) translateY(6px);
     }
 }

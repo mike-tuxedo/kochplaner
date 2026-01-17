@@ -31,14 +31,15 @@
 <body id="app">
     <!-- Main Content Area with Pages -->
     <main class="pico" :data-color="theme">
+        <div :class="activePage === 0 ? 'active' : ''" class="page page-welcome" id="page0"></div>
         <div :class="activePage === 1 ? 'active' : ''" class="page" id="page1"></div>
         <div :class="activePage === 2 ? 'active' : ''" class="page" id="page2"></div>
         <div :class="activePage === 3 ? 'active' : ''" class="page" id="page3"></div>
         <div :class="activePage === 4 ? 'active' : ''" class="page" id="page4"></div>
     </main>
 
-    <!-- Bottom Navigation -->
-    <footer class="pico" :data-color="theme">
+    <!-- Bottom Navigation (hidden on welcome page) -->
+    <footer class="pico" :data-color="theme" :class="{ 'hide': activePage === 0 }">
         <div role="group">
             <button :class="[activePage === 1 ? 'active' : '', theme === 'dark' ? 'outline' : '']" @click="navigateTo(1)">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -90,6 +91,24 @@
                 <input type="text" v-model="editingRecipe.name" placeholder="z.B. Spaghetti Bolognese">
             </label>
 
+            <label>
+                Zubereitung <small>(optional)</small>
+                <textarea v-model="editingRecipe.description" placeholder="Kurze Beschreibung oder Notizen zum Rezept..." rows="10"></textarea>
+            </label>
+
+            <label>Foto <small>(optional)</small></label>
+            <div class="recipe-photo-upload">
+                <div v-if="editingRecipe.photo" class="photo-preview">
+                    <img :src="editingRecipe.photo" alt="Rezeptfoto">
+                    <button type="button" class="photo-remove" @click="removePhoto()">×</button>
+                </div>
+                <label v-else class="photo-upload-btn" role="button" :class="{ outline: theme === 'dark' }">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M21 15V18H24V20H21V23H19V20H16V18H19V15H21ZM21.0082 3C21.556 3 22 3.44495 22 3.9934V13H20V5H4V18.999L14 9L17 12V14.829L14 11.8284L6.827 19H14V21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H21.0082ZM8 7C9.10457 7 10 7.89543 10 9C10 10.1046 9.10457 11 8 11C6.89543 11 6 10.1046 6 9C6 7.89543 6.89543 7 8 7Z"></path></svg>
+                    Foto hinzufügen
+                    <input type="file" accept="image/*" @change="handlePhotoUpload($event)" hidden>
+                </label>
+            </div>
+
             <label>Zutaten</label>
             <div class="ingredients-list">
                 <div v-for="(ing, idx) in editingRecipe.ingredients" :key="idx" class="ingredient-row-outer">
@@ -110,8 +129,46 @@
         </div>
     </app-drawer>
 
+    <!-- Drawer: Rezeptvorschlag -->
+    <app-drawer id="suggestionDrawer" class="pico" :data-color="theme">
+        <h3>Rezeptidee</h3>
+        <div v-if="suggestedRecipe" class="suggestion-content">
+            <div class="suggestion-card" :class="{ 'has-photo': suggestedRecipe.photo }">
+                <img v-if="suggestedRecipe.photo" :src="suggestedRecipe.photo" alt="" class="suggestion-photo">
+                <div class="suggestion-card-content">
+                    <h4>{{ suggestedRecipe.name }}</h4>
+                    <p v-if="suggestedRecipe.description" class="suggestion-description">{{ suggestedRecipe.description }}</p>
+                    <details>
+                        <summary>{{ suggestedRecipe.ingredients.length }} Zutaten</summary>
+                        <ul class="ingredients">
+                            <li v-for="ing in suggestedRecipe.ingredients" :key="ing.name">
+                                {{ ing.amount }} {{ ing.unit }} {{ ing.name }}
+                            </li>
+                        </ul>
+                    </details>
+                </div>
+            </div>
+            <div class="suggestion-actions">
+                <button class="secondary" :class="{ outline: theme === 'dark' }" @click="getNewSuggestion()">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M5.46257 4.43262C7.21556 2.91688 9.5007 2 12 2C17.5228 2 22 6.47715 22 12C22 14.1361 21.3302 16.1158 20.1892 17.7406L17 12H20C20 7.58172 16.4183 4 12 4C9.84982 4 7.89777 4.84827 6.46023 6.22842L5.46257 4.43262ZM18.5374 19.5674C16.7844 21.0831 14.4993 22 12 22C6.47715 22 2 17.5228 2 12C2 9.86386 2.66979 7.88416 3.8108 6.25944L7 12H4C4 16.4183 7.58172 20 12 20C14.1502 20 16.1022 19.1517 17.5398 17.7716L18.5374 19.5674Z"></path></svg>
+                    Andere Idee
+                </button>
+                <button @click="adoptSuggestion()">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM11 11H7V13H11V17H13V13H17V11H13V7H11V11Z"></path></svg>
+                    Übernehmen
+                </button>
+            </div>
+        </div>
+        <div v-else class="empty-state">
+            <p>Lade Rezeptvorschlag...</p>
+        </div>
+    </app-drawer>
+
     <!-- Modal Dialog -->
     <app-modal id="appModal" class="pico" :data-color="theme"></app-modal>
+
+    <!-- Toast Notification -->
+    <div class="toast" :class="{ show: toastVisible }">{{ toastMessage }}</div>
 
     <!-- Core App Scripts -->
     <script src="js/app.js" type="module"></script>

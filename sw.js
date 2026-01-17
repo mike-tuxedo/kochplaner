@@ -3,7 +3,7 @@
  * Caching-Strategie für Offline-Fähigkeit
  */
 
-const CACHE_NAME = 'kochplaner-v7';
+const CACHE_NAME = 'kochplaner-v4';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -19,6 +19,7 @@ const STATIC_ASSETS = [
     './js/lib/navigation.js',
     './js/components/drawer.js',
     './js/components/modal.js',
+    './routes/welcome.html',
     './routes/weekplan.html',
     './routes/recipes.html',
     './routes/shopping.html',
@@ -39,6 +40,7 @@ self.addEventListener('install', (event) => {
         })
     );
 
+    // Auto-update: activate new SW immediately
     self.skipWaiting();
 });
 

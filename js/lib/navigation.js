@@ -9,6 +9,7 @@ console.log('[Navigation] Loaded');
  * Page configuration
  */
 const PAGES = [
+    { id: 0, name: 'welcome', file: 'welcome.html' },
     { id: 1, name: 'weekplan', file: 'weekplan.html' },
     { id: 2, name: 'recipes', file: 'recipes.html' },
     { id: 3, name: 'shopping', file: 'shopping.html' },

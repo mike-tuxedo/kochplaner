@@ -1,0 +1,93 @@
+<section class="welcome-page-stage">
+        <div class="welcome-icon">
+            <img src="/icons/appicon/web-app-manifest-192x192.png" alt="Kochplaner" />
+        </div>
+
+        <h1>Kochplaner</h1>
+        <p class="welcome-tagline">Dein persönlicher Wochenplaner für Mahlzeiten</p>
+
+        <div class="grid welcome-stage">
+            <div class="welcome-features">
+                <div class="feature">
+                    <span class="feature-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9 1V3H15V1H17V3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H7V1H9ZM20 11H4V19H20V11ZM8 14V16H6V14H8ZM18 14V16H10V14H18ZM7 5H4V9H20V5H17V7H15V5H9V7H7V5Z"></path></svg></span>
+                    <span>Wochenplan mit zufälligen Rezepten</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M14.2683 12.1466L13.4147 13.0002L20.4858 20.0712L19.0716 21.4854L12.0005 14.4144L4.92946 21.4854L3.51525 20.0712L12.854 10.7324C12.2664 9.27549 12.8738 7.17715 14.4754 5.57554C16.428 3.62292 19.119 3.14805 20.4858 4.51488C21.8526 5.88172 21.3778 8.57267 19.4251 10.5253C17.8235 12.1269 15.7252 12.7343 14.2683 12.1466ZM4.22235 3.80777L10.9399 10.5253L8.11144 13.3537L4.22235 9.46463C2.66026 7.90253 2.66026 5.36987 4.22235 3.80777ZM18.0109 9.11107C19.2682 7.85386 19.5274 6.38488 19.0716 5.92909C18.6158 5.47331 17.1468 5.73254 15.8896 6.98975C14.6324 8.24697 14.3732 9.71595 14.829 10.1717C15.2847 10.6275 16.7537 10.3683 18.0109 9.11107Z"></path></svg></span>
+                    <span>Eigene Rezepte verwalten</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0049 2C15.3186 2 18.0049 4.68629 18.0049 8V9H22.0049V11H20.8379L20.0813 20.083C20.0381 20.6013 19.6048 21 19.0847 21H4.92502C4.40493 21 3.97166 20.6013 3.92847 20.083L3.17088 11H2.00488V9H6.00488V8C6.00488 4.68629 8.69117 2 12.0049 2ZM13.0049 13H11.0049V17H13.0049V13ZM9.00488 13H7.00488V17H9.00488V13ZM17.0049 13H15.0049V17H17.0049V13ZM12.0049 4C9.86269 4 8.1138 5.68397 8.00978 7.80036L8.00488 8V9H16.0049V8C16.0049 5.8578 14.3209 4.10892 12.2045 4.0049L12.0049 4Z"></path></svg></span>
+                    <span>Automatische Einkaufsliste</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M2.80815 1.39343L20.4858 19.0711L19.0716 20.4853L15.3889 16.8034L12.0005 21L0.689941 6.99674C1.60407 6.25747 2.59204 5.60589 3.64107 5.05479L1.39394 2.80765L2.80815 1.39343ZM3.57997 7.39183L12.0005 17.817L13.9669 15.3804L5.13163 6.54439C4.59981 6.79756 4.08187 7.0804 3.57997 7.39183ZM12.0005 3.00003C16.2849 3.00003 20.2196 4.49687 23.3104 6.99611L17.9039 13.689L16.4819 12.267L20.4204 7.39135C17.9226 5.84171 15.0278 5.00003 12.0005 5.00003C11.1277 5.00003 10.2659 5.07 9.42141 5.20674L7.72504 3.51088C9.09547 3.17702 10.5273 3.00003 12.0005 3.00003Z"></path></svg></span>
+                    <span>Offline verfügbar</span>
+                </div>
+            </div>
+            <div class="welcome-actions">
+                <button @click="installAndStart()" class="welcome-btn-primary">
+                    App installieren
+                </button>
+                <button @click="skipInstall()" class="welcome-btn-secondary outline">
+                    Im Browser nutzen
+                </button>
+            </div>
+        </div>
+
+        <p class="welcome-hint" v-if="isIOSDevice">
+            <small>
+                <strong>Tipp für iOS:</strong> Tippe auf
+                <span style="font-size: 1.1em;">&#9094;</span> und wähle "Zum Home-Bildschirm"
+            </small>
+        </p>
+        <a href="#features" class="contrast showmore">
+            Mehr zu den Features?<br>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 19.1642L18.2071 12.9571L16.7929 11.5429L12 16.3358L7.20712 11.5429L5.79291 12.9571L12 19.1642ZM12 13.5143L18.2071 7.30722L16.7929 5.89301L12 10.6859L7.20712 5.89301L5.79291 7.30722L12 13.5143Z"></path></svg>
+        </a>
+</section>
+
+<section class="welcome-page-features">
+    <div id="features" class="anchor"></div>
+    <h2 class="text-center">Features</h2>
+
+    <div class="feature-teaser">
+        <div class="feature-teaser-image">
+            <img src="/images/weekplan.svg" alt="Wochenplan">
+        </div>
+        <div class="feature-teaser-content">
+            <h3>Wochenplan mit zufälligen Rezepten</h3>
+            <p>Keine Idee, was du kochen sollst? Der Kochplaner generiert dir auf Knopfdruck einen kompletten Wochenplan mit abwechslungsreichen Rezepten aus deiner Sammlung.</p>
+        </div>
+    </div>
+
+    <div class="feature-teaser reverse">
+        <div class="feature-teaser-image">
+            <img src="/images/recipes.svg" alt="Rezepte verwalten">
+        </div>
+        <div class="feature-teaser-content">
+            <h3>Eigene Rezepte verwalten</h3>
+            <p>Speichere deine Lieblingsrezepte an einem Ort. Füge Zutaten, Anleitungen und Bilder hinzu – alles übersichtlich organisiert und jederzeit griffbereit.</p>
+        </div>
+    </div>
+
+    <div class="feature-teaser">
+        <div class="feature-teaser-image">
+            <img src="/images/shoppinglist.svg" alt="Einkaufsliste">
+        </div>
+        <div class="feature-teaser-content">
+            <h3>Automatische Einkaufsliste</h3>
+            <p>Der Kochplaner erstellt automatisch eine Einkaufsliste aus allen Zutaten deines Wochenplans. Nie wieder vergessen, was du einkaufen musst.</p>
+        </div>
+    </div>
+
+    <div class="feature-teaser reverse">
+        <div class="feature-teaser-image">
+            <img src="/images/offline.svg" alt="Offline verfügbar">
+        </div>
+        <div class="feature-teaser-content">
+            <h3>Offline verfügbar</h3>
+            <p>Installiere die App und nutze sie auch ohne Internetverbindung. Perfekt für den Einkauf im Supermarkt oder beim Kochen in der Küche.</p>
+        </div>
+    </div>
+</section>

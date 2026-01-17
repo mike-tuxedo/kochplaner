@@ -1,50 +1,5 @@
 [
   {
-    "id": "00f2c3ef-1bd8-43fd-8796-aae034308e82",
-    "name": "Toast",
-    "ingredients": [
-      { "name": "Toastbrot", "amount": 1, "unit": "Packung" },
-      { "name": "Wurst", "amount": 10, "unit": "dag" },
-      { "name": "Käse", "amount": 1, "unit": "Packung" },
-      { "name": "Butter", "amount": 1, "unit": "Stück" }
-    ],
-    "createdAt": 1768340558849
-  },
-  {
-    "id": "011dfc73-1104-4037-8950-8390b7e09d3f",
-    "name": "Spagetti",
-    "ingredients": [
-      { "name": "Spagetti Nudeln", "amount": 1, "unit": "Packung" },
-      { "name": "Tomatenmark", "amount": 1, "unit": "Tube" },
-      { "name": "Zwiebel", "amount": 1, "unit": "Stück" },
-      { "name": "Faschiertes", "amount": 60, "unit": "dag" }
-    ],
-    "createdAt": 1768340640782
-  },
-  {
-    "id": "5626ad42-7c17-4018-9cfe-0edb0ead8a6f",
-    "name": "Pizza",
-    "ingredients": [
-      { "name": "Pizzateig", "amount": 1, "unit": "Stück" },
-      { "name": "Tomatenmark", "amount": 1, "unit": "Tube" },
-      { "name": "Wurst", "amount": 10, "unit": "dag" },
-      { "name": "Käse", "amount": 1, "unit": "Packung" },
-      { "name": "Zwiebel", "amount": 1, "unit": "Stück" }
-    ],
-    "createdAt": 1768340713391
-  },
-  {
-    "id": "70b42b5a-a8ba-4789-8717-7f516b3c2c2c",
-    "name": "Bohneneintopf",
-    "ingredients": [
-      { "name": "Rote Bohnen", "amount": 1, "unit": "Große Dose" },
-      { "name": "Weiße Bohnen", "amount": 1, "unit": "Große Dose" },
-      { "name": "Tomaten", "amount": 5, "unit": "Stück" },
-      { "name": "Tomatenmark", "amount": 1, "unit": "Stück" }
-    ],
-    "createdAt": 1768338937257
-  },
-  {
     "name": "Pasta Carbonara",
     "description": "Cremige italienische Pasta mit Ei und Speck",
     "ingredients": [

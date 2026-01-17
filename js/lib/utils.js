@@ -50,3 +50,49 @@ function escapeHtml(text) {
     div.textContent = text || "";
     return div.innerHTML;
 }
+
+/**
+ * Compresses an image file using canvas
+ * @param {File} file - Image file to compress
+ * @param {Object} options - Compression options
+ * @param {number} options.maxWidth - Maximum width (default: 800)
+ * @param {number} options.maxHeight - Maximum height (default: 800)
+ * @param {number} options.quality - JPEG quality 0-1 (default: 0.7)
+ * @returns {Promise<string>} - Base64 encoded compressed image
+ */
+function compressImage(file, options = {}) {
+    const { maxWidth = 800, maxHeight = 800, quality = 0.7 } = options;
+
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                let { width, height } = img;
+
+                // Calculate new dimensions
+                if (width > maxWidth || height > maxHeight) {
+                    const ratio = Math.min(maxWidth / width, maxHeight / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+
+                // Create canvas and draw resized image
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convert to base64
+                const base64 = canvas.toDataURL('image/jpeg', quality);
+                resolve(base64);
+            };
+            img.onerror = () => reject(new Error('Bild konnte nicht geladen werden'));
+            img.src = e.target.result;
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+    });
+}

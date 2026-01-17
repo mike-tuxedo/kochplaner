@@ -16,7 +16,7 @@
         <li>Erstelle deine Einkaufsliste</li>
     </ol>
 </article>
-<article class="grid text-center" v-if="recipes.length === 0">
+<article class="init-content-1 text-center" v-if="recipes.length === 0">
     <h3 class="mb-0">Also, LOS GEHTs!</h3>
     <p class="mb-0">Du kannst jetzt...</p>
 
@@ -29,7 +29,7 @@
     <h3 class="mb-0">Super, du hast die ersten Rezepte!</h3>
     <p>Du kannst jetzt deinen Wochenplan erstellen lassen</p>
     <small><b>Kleiner Tipp:</b> Um so mehr Rezepte umso abwechslungsreicher kann der Plan werden.
-        Wenn du hier noch Inspiration brauchst dann schau dir <button class="btn-small" @click="navigateTo(3)">hier</button> Vorschläge an
+        Wenn du noch Inspiration brauchst dann schau bei der <button class="btn-small" @click="navigateTo(2)">Rezeptseite</button> nach und klicke dort einfach auf <b>Rezeptidee</b>.
     </small>
     <hr>
     <button :class="{ outline: theme === 'dark' }" v-else @click="generateNewWeek()">Wochenplan erstellen</button>
