@@ -1,0 +1,156 @@
+/**
+ * Theme System - Kochplaner
+ * Amber color scheme with Dark/Light mode support
+ */
+
+/* ===========================================
+   1. GLOBAL LAYOUT VARIABLES
+   =========================================== */
+:root {
+    --toolbarHeight: 56px;
+    --saveSpaceH: 1.5rem;
+    --saveSpaceV: 1.5rem;
+    --pico-block-spacing-vertical: 1.5rem;
+    --pico-block-spacing-horizontal: 1.5rem;
+    --pico-border-radius: 12px;
+}
+
+/* ===========================================
+   2. DARK MODE
+   =========================================== */
+[data-theme=dark] {
+    color-scheme: dark;
+
+    /* Base colors */
+    --pico-background-color: rgb(19, 23, 31);
+    --pico-color: #f4f4f4;
+    --pico-muted-color: #7b8495;
+    --pico-muted-border-color: #202632;
+
+    /* Secondary colors */
+    --pico-secondary: #969eaf;
+    --pico-secondary-background: #525f7a;
+    --pico-secondary-border: var(--pico-secondary-background);
+    --pico-secondary-hover: #b3b9c5;
+    --pico-secondary-hover-background: #5d6b89;
+    --pico-secondary-inverse: #fff;
+
+    /* Contrast colors */
+    --pico-contrast: #dfe3eb;
+    --pico-contrast-background: #eff1f4;
+    --pico-contrast-inverse: #000;
+
+    /* Headings */
+    --pico-h1-color: #f0f1f3;
+    --pico-h2-color: #e0e3e7;
+    --pico-h3-color: #c2c7d0;
+
+    /* Cards */
+    --pico-card-background-color: #181c25;
+    --pico-card-border-color: var(--pico-card-background-color);
+
+    /* Forms */
+    --pico-form-element-background-color: rgb(28, 33, 44);
+    --pico-form-element-border-color: #2a3140;
+    --pico-form-element-color: #e0e3e7;
+    --pico-form-element-active-background-color: rgb(26, 31, 40);
+
+    /* Custom app variables */
+    --custom-header-background: rgba(19, 23, 31, 0.8);
+    --custom-header-color: var(--pico-color);
+    --custom-footer-background: var(--custom-header-background);
+    --custom-footer-color: var(--pico-muted-color);
+    --custom-footer-border: var(--pico-muted-border-color);
+    --custom-footer-color-active: var(--pico-primary);
+    --custom-footer-border-active: var(--pico-primary);
+    --custom-body-background: var(--pico-background-color);
+}
+
+/* ===========================================
+   3. LIGHT MODE
+   =========================================== */
+[data-theme=light] {
+    color-scheme: light;
+
+    /* Base colors */
+    --pico-background-color: #fff;
+    --pico-color: #373c44;
+    --pico-muted-color: #646b79;
+    --pico-muted-border-color: #e7eaef;
+
+    /* Secondary colors */
+    --pico-secondary: #5d6b89;
+    --pico-secondary-background: #525f7a;
+    --pico-secondary-hover: #48536b;
+    --pico-secondary-inverse: #fff;
+
+    /* Contrast colors */
+    --pico-contrast: #181c25;
+    --pico-contrast-background: #181c25;
+    --pico-contrast-inverse: #fff;
+
+    /* Headings */
+    --pico-h1-color: #373c44;
+    --pico-h2-color: #373c44;
+    --pico-h3-color: #424751;
+
+    /* Cards */
+    --pico-card-background-color: var(--pico-background-color);
+    --pico-card-border-color: var(--pico-muted-border-color);
+
+    /* Forms */
+    --pico-form-element-background-color: #fbfbfc;
+    --pico-form-element-border-color: #cfd5e2;
+    --pico-form-element-color: #23262c;
+
+    /* Custom app variables */
+    --custom-header-background: rgba(255, 255, 255, 0.8);
+    --custom-header-color: var(--pico-color);
+    --custom-footer-background: var(--custom-header-background);
+    --custom-footer-color: var(--pico-muted-color);
+    --custom-footer-border: var(--pico-muted-border-color);
+    --custom-footer-color-active: var(--pico-primary);
+    --custom-footer-border-active: var(--pico-primary);
+    --custom-body-background: var(--pico-background-color);
+}
+
+/* ===========================================
+   4. AMBER COLOR SCHEME
+   =========================================== */
+[data-color=amber] {
+    /* Primary color - Amber */
+    --pico-text-selection-color: rgba(183, 136, 0, 0.25);
+    --pico-primary: #c79400;
+    --pico-primary-background: #ffbf00;
+    --pico-primary-border: var(--pico-primary-background);
+    --pico-primary-underline: rgba(135, 100, 0, 0.5);
+    --pico-primary-hover: #e8ae01;
+    --pico-primary-hover-background: #e8ae01;
+    --pico-primary-hover-border: var(--pico-primary-hover-background);
+    --pico-primary-focus: rgba(183, 136, 0, 0.5);
+    --pico-primary-inverse: #000;
+
+    /* Amber + Dark mode */
+    &[data-theme=dark] {
+        --pico-h1-color: var(--pico-primary);
+        --pico-primary-hover-background: #fecc63;
+        --custom-body-background: radial-gradient(circle at 80% 120%, rgb(199 148 0 / 20%), #000 90%);
+    }
+
+    /* Amber + Light mode */
+    &[data-theme=light] {
+        --pico-h1-color: #694d00;
+        --pico-primary: #fecc63;
+        --pico-primary-hover: #e8ae01;
+        --pico-primary-hover-background: #fecc63;
+        --custom-body-background: radial-gradient(circle at 80% 120%, rgb(255, 245, 190), #ffd946 90%);
+        --custom-body-background: #f4f4f4;
+        --pico-primary-background: #ffbf00;
+        --pico-primary-border: var(--pico-primary-background);
+
+        --custom-footer-background: rgba(255, 191, 0, 0.85);
+        --custom-footer-color: #000;
+        --custom-footer-color-active: #000;
+        --custom-footer-border-active: #000;
+    }
+}

@@ -1,0 +1,39 @@
+<div class="page-header">
+    <h2>Einstellungen</h2>
+</div>
+
+<article class="settings-section">
+    <h4>Darstellung</h4>
+    <label>
+        <input name="terms" type="checkbox" role="switch" @change="toggleTheme()"/>
+        {{ theme === 'light' ? '☀️ Light Mode' : '🌙 Dark Mode' }}
+    </label>
+</article>
+
+<article class="settings-section">
+    <hgroup>
+        <h4>Rezepte verwalten</h4>
+        <p>Hier kannst du Backups erstellen und wiederherstellen. Beim Import werden keine bestehenden Rezepte gelöscht, sondern nur neue hinzugefügt.</p>
+    </hgroup>
+    <div class="settings-actions">
+        <button class="secondary" @click="exportRecipes()">Exportieren</button>
+        <label class="secondary" role="button">
+            Importieren
+            <input type="file" accept=".json" @change="importRecipes($event)" hidden>
+        </label>
+    </div>
+</article>
+
+<article class="settings-section">
+    <hgroup>
+        <h4>Vorderinierte Rezepte</h4>
+        <p>Hier kannst eine von uns getroffene Vorauswahl an Rezepten importieren. Beim Import werden keine bestehenden Rezepte gelöscht, sondern nur neue hinzugefügt.</p>
+    </hgroup>
+    <button class="secondary" @click="loadDefaultRecipes()">Standardrezepte laden</button>
+</article>
+
+<article class="settings-section">
+    <h4>Über die App</h4>
+    <p>Kochplaner - Dein persönlicher Wochenplaner für Mahlzeiten</p>
+    <small>Version 1.0 | Offline-fähig</small>
+</article>

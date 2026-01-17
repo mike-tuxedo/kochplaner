@@ -1,0 +1,62 @@
+<div class="page-header">
+    <h2>Wochenplan</h2>
+    <button :class="{ outline: theme === 'dark' }" v-if="weekplan" @click="generateNewWeek()">Neu generieren</button>
+</div>
+
+<!-- Kein Wochenplan: Onboarding -->
+<article v-if="!weekplan" class="text-left">
+    <hgroup>
+        <h2>Willkommen beim Kochplaner!</h2>
+    </hgroup>
+    <hr>
+    <p class="text-primary"><b>In 3 Schritten zu deinem Wochenplan:</b></p>
+    <ol class="mb-4">
+        <li>Füge deine Lieblingsrezepte hinzu</li>
+        <li>Generiere einen Wochenplan</li>
+        <li>Erstelle deine Einkaufsliste</li>
+    </ol>
+</article>
+<article class="grid text-center" v-if="recipes.length === 0">
+    <h3 class="mb-0">Also, LOS GEHTs!</h3>
+    <p class="mb-0">Du kannst jetzt...</p>
+
+    <button :class="{ outline: theme === 'dark' }" @click="loadDefaultRecipes()">Vorbereitete Standardrezepte laden</button>
+    <p class="mb-0">oder gleich</p>
+    <button :class="{ outline: theme === 'dark' }" @click="navigateTo(2)">Eigene Rezepte erstellen</button>
+</article>
+
+<article class="grid" v-if="recipes.length !== 0 && !weekplan">
+    <h3 class="mb-0">Super, du hast die ersten Rezepte!</h3>
+    <p>Du kannst jetzt deinen Wochenplan erstellen lassen</p>
+    <small><b>Kleiner Tipp:</b> Um so mehr Rezepte umso abwechslungsreicher kann der Plan werden.
+        Wenn du hier noch Inspiration brauchst dann schau dir <button class="btn-small" @click="navigateTo(3)">hier</button> Vorschläge an
+    </small>
+    <hr>
+    <button :class="{ outline: theme === 'dark' }" v-else @click="generateNewWeek()">Wochenplan erstellen</button>
+</article>
+
+<!-- Wochenplan vorhanden -->
+<div v-if="weekplan" class="weekplan-grid">
+    <article v-for="(day, index) in weekplan.days" :key="day.dayName"
+             class="day-slot mb-1" @click="openRecipeDrawer(index)">
+        <div class="day-header">
+            <p class="mb-0">
+                {{ day.dayName }}
+                <small>{{ formatDate(day.date) }}</small>
+            </p>
+            <h4 class="recipe-name" v-if="getRecipeById(day.recipeId)">
+                {{ getRecipeById(day.recipeId).name }}
+            </h4>
+            <p v-else><em>Kein Rezept</em></p>
+        </div>
+        
+        <details class="mb-0" v-if="getRecipeById(day.recipeId)" @click.stop>
+            <summary>Zutaten</summary>
+            <ul>
+                <li v-for="ing in getRecipeById(day.recipeId).ingredients">
+                    {{ ing.amount }} {{ ing.unit }} {{ ing.name }}
+                </li>
+            </ul>
+        </details>
+    </article>
+</div>

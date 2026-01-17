@@ -1,22 +1,29 @@
 /**
- * Service Worker - HomeCooking App
+ * Service Worker - Kochplaner App
  * Caching-Strategie für Offline-Fähigkeit
  */
 
-const CACHE_NAME = 'homecooking-v2';
+const CACHE_NAME = 'kochplaner-v7';
 const STATIC_ASSETS = [
-    '/',
-    '/index.html',
-    '/css/pico.min.css',
-    '/css/style.css',
-    '/js/app.js',
-    '/js/storage.js',
-    '/js/recipes.js',
-    '/js/weekplan.js',
-    '/js/shopping.js',
-    '/js/lib/idb.js',
-    '/js/lib/wrap-idb-value.js',
-    '/manifest.json'
+    './',
+    './index.html',
+    './css/pico.min.css',
+    './css/theme.css',
+    './css/style.css',
+    './js/app.js',
+    './js/storage.js',
+    './js/lib/idb.js',
+    './js/lib/wrap-idb-value.js',
+    './js/lib/petite-vue.es.js',
+    './js/lib/utils.js',
+    './js/lib/navigation.js',
+    './js/components/drawer.js',
+    './js/components/modal.js',
+    './routes/weekplan.html',
+    './routes/recipes.html',
+    './routes/shopping.html',
+    './routes/settings.html',
+    './manifest.json'
 ];
 
 /**
@@ -75,7 +82,6 @@ self.addEventListener('fetch', (event) => {
 
 /**
  * Cache First Strategie
- * Für statische Assets (HTML, CSS, JS)
  */
 async function cacheFirst(request) {
     const cachedResponse = await caches.match(request);
@@ -87,7 +93,6 @@ async function cacheFirst(request) {
     try {
         const networkResponse = await fetch(request);
 
-        // Nur erfolgreiche Responses cachen
         if (networkResponse.ok) {
             const cache = await caches.open(CACHE_NAME);
             cache.put(request, networkResponse.clone());
@@ -97,9 +102,8 @@ async function cacheFirst(request) {
     } catch (error) {
         console.error('[SW] Fetch fehlgeschlagen:', error);
 
-        // Fallback für HTML-Requests
-        if (request.headers.get('accept').includes('text/html')) {
-            return caches.match('/index.html');
+        if (request.headers.get('accept')?.includes('text/html')) {
+            return caches.match('./index.html');
         }
 
         throw error;
@@ -108,7 +112,6 @@ async function cacheFirst(request) {
 
 /**
  * Network First Strategie
- * Für API-Requests (TheMealDB)
  */
 async function networkFirst(request) {
     try {
@@ -121,14 +124,10 @@ async function networkFirst(request) {
 
         return networkResponse;
     } catch (error) {
-        console.error('[SW] Network fehlgeschlagen, versuche Cache:', error);
-
         const cachedResponse = await caches.match(request);
-
         if (cachedResponse) {
             return cachedResponse;
         }
-
         throw error;
     }
 }

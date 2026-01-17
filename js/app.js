@@ -1,345 +1,387 @@
 /**
- * app.js - Haupt-App mit Routing & Initialisierung
+ * app.js - Main Application with petite-vue
  */
 
-import { initDB, loadDefaultRecipes } from './storage.js';
-import { renderRecipesList, renderRecipeForm, saveRecipeFromForm, deleteRecipeById, addIngredientRow, exportRecipesAction, importRecipesAction } from './recipes.js';
-import { renderWeekplan, renderDashboard, generateWeekplan, changeRecipeForDay, initWeekplanDragDrop, moveWeekplanItem } from './weekplan.js';
-import { renderShoppingList, toggleShoppingItem, shareShoppingList } from './shopping.js';
+import { createApp, reactive } from './lib/petite-vue.es.js';
+import { loadPages } from './lib/navigation.js';
+import {
+    initDB,
+    getAllRecipes,
+    saveRecipe,
+    deleteRecipe as deleteRecipeFromDB,
+    getWeekplan,
+    saveWeekplan,
+    getSetting,
+    setSetting,
+    exportRecipes as exportRecipesToFile,
+    importRecipes as importRecipesFromFile,
+    loadDefaultRecipes as loadDefaultRecipesFromDB,
+    generateUUID
+} from './storage.js';
 
-// Globale Funktionen für onclick-Handler
-window.showRecipeForm = showRecipeForm;
-window.editRecipe = editRecipe;
-window.deleteRecipeConfirm = deleteRecipeById;
-window.addIngredientRow = addIngredientRow;
-window.generateNewWeek = generateNewWeek;
-window.changeRecipeForDay = changeRecipeForDay;
-window.toggleShoppingItem = toggleShoppingItem;
-window.shareShoppingList = shareShoppingList;
-window.moveWeekplanItem = moveWeekplanItem;
-window.exportRecipesAction = exportRecipesAction;
-window.importRecipesAction = importRecipesAction;
-window.loadDefaultRecipes = loadDefaultRecipesAction;
-window.toggleTheme = toggleTheme;
+console.log('[App] Starting Kochplaner...');
+
+// Modal helper
+const modal = () => $id('appModal');
+
+// Load pages first, then initialize store
+await loadPages();
+await initDB();
+console.log('[App] Database initialized');
+
+// Days of week
+const DAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+
+// Hash routing maps
+const hashToPage = {
+    '#plan': 1, '#': 1, '': 1,
+    '#recipes': 2,
+    '#shopping': 3,
+    '#settings': 4
+};
+const pageToHash = {
+    1: '#plan',
+    2: '#recipes',
+    3: '#shopping',
+    4: '#settings'
+};
+
+function getPageFromHash() {
+    const hash = window.location.hash || '#plan';
+    return hashToPage[hash] || 1;
+}
 
 /**
- * App-Initialisierung
+ * Reactive Store
  */
-async function init() {
-    console.log('🍳 HomeCooking App startet...');
+const store = reactive({
+    // Navigation
+    activePage: getPageFromHash(),
+    theme: localStorage.getItem('theme') || 'dark',
 
-    // Theme laden
-    initTheme();
+    // Data
+    recipes: [],
+    weekplan: null,
+    shoppingList: [],
+    editingRecipe: null,
+    selectedDayIndex: null,
 
-    // IndexedDB initialisieren
-    await initDB();
-    console.log('✓ IndexedDB initialisiert');
+    // Format date helper
+    formatDate(isoDate) {
+        const date = new Date(isoDate);
+        return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+    },
 
-    // Service Worker registrieren
-    if ('serviceWorker' in navigator) {
+    // Get recipe by ID
+    getRecipeById(id) {
+        return this.recipes.find(r => r.id === id);
+    },
+
+    // === RECIPE ACTIONS ===
+    showRecipeForm() {
+        this.editingRecipe = {
+            id: null,
+            name: '',
+            ingredients: [{ name: '', amount: '', unit: '' }]
+        };
+        $id('recipeEditDrawer')?.open();
+    },
+
+    editRecipe(recipe) {
+        this.editingRecipe = JSON.parse(JSON.stringify(recipe));
+        $id('recipeEditDrawer')?.open();
+    },
+
+    cancelEdit() {
+        $id('recipeEditDrawer')?.close();
+    },
+
+    addIngredient() {
+        this.editingRecipe.ingredients.push({ name: '', amount: '', unit: '' });
+    },
+
+    removeIngredient(index) {
+        if (this.editingRecipe.ingredients.length > 1) {
+            this.editingRecipe.ingredients.splice(index, 1);
+        }
+    },
+
+    async saveRecipe() {
+        if (!this.editingRecipe.name.trim()) {
+            await modal().alert('Bitte gib einen Rezeptnamen ein.');
+            return;
+        }
+
+        // Filter out empty ingredients
+        this.editingRecipe.ingredients = this.editingRecipe.ingredients.filter(
+            ing => ing.name.trim()
+        );
+
+        if (this.editingRecipe.ingredients.length === 0) {
+            await modal().alert('Bitte füge mindestens eine Zutat hinzu.');
+            return;
+        }
+
+        // Convert reactive proxy to plain object for IndexedDB
+        const recipeData = JSON.parse(JSON.stringify(this.editingRecipe));
+        await saveRecipe(recipeData);
+        await this.loadRecipes();
+        $id('recipeEditDrawer')?.close();
+    },
+
+    async deleteRecipe(id) {
+        if (await modal().confirm('Rezept wirklich löschen?')) {
+            await deleteRecipeFromDB(id);
+            await this.loadRecipes();
+        }
+    },
+
+    async loadRecipes() {
+        this.recipes = await getAllRecipes();
+    },
+
+    async exportRecipes() {
+        await exportRecipesToFile();
+    },
+
+    async importRecipes(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const confirmed = await modal().confirm(
+            'Rezepte importieren?',
+            'Deine vorhandenen Rezepte bleiben erhalten. Neue Rezepte werden hinzugefügt.'
+        );
+        if (!confirmed) {
+            event.target.value = '';
+            return;
+        }
+
         try {
-            await navigator.serviceWorker.register('./sw.js');
-            console.log('✓ Service Worker registriert');
+            const count = await importRecipesFromFile(file);
+            await modal().alert(`${count} Rezept(e) erfolgreich importiert!`);
+            await this.loadRecipes();
         } catch (err) {
-            console.error('Service Worker Fehler:', err);
+            await modal().alert('Fehler beim Import: ' + err.message);
         }
-    }
+        event.target.value = '';
+    },
 
-    // Hash-Routing initialisieren
-    window.addEventListener('hashchange', router);
+    async loadDefaultRecipes() {
+        const confirmed = await modal().confirm(
+            'Standardrezepte laden?',
+            'Deine vorhandenen Rezepte bleiben erhalten. Neue Rezepte werden hinzugefügt.'
+        );
+        if (!confirmed) return;
 
-    // Initial Route
-    await router();
+        try {
+            const count = await loadDefaultRecipesFromDB();
+            await modal().alert(`${count} Standardrezept(e) erfolgreich geladen!`);
+            await this.loadRecipes();
+        } catch (err) {
+            await modal().alert('Fehler: ' + err.message);
+        }
+    },
 
-    console.log('✓ App bereit!');
-}
+    // === WEEKPLAN ACTIONS ===
+    async loadWeekplan() {
+        const weekId = await getSetting('currentWeekId');
+        if (weekId) {
+            this.weekplan = await getWeekplan(weekId);
+        }
+        this.generateShoppingList();
+    },
 
-/**
- * Router - verarbeitet Hash-Navigation
- */
-async function router() {
-    const hash = window.location.hash.slice(1) || '/';
-    const appContainer = document.getElementById('app');
-
-    // Navigation aktiv markieren
-    updateNavigation(hash);
-
-    // Loading anzeigen
-    appContainer.innerHTML = '<article aria-busy="true">Lädt...</article>';
-
-    let content = '';
-
-    try {
-        switch (hash) {
-            case '/':
-                content = await renderDashboard();
-                // Initialize drag & drop if weekplan is shown
-                setTimeout(() => initWeekplanDragDrop(), 50);
-                break;
-
-            case '/recipes':
-                content = await renderRecipesList();
-                break;
-
-            case '/recipes/new':
-                content = await renderRecipeForm();
-                setupRecipeFormHandler();
-                break;
-
-            case '/weekplan':
-                // Redirect to Dashboard (merged view)
-                window.location.hash = '/';
-                return;
-
-            case '/shopping':
-                content = await renderShoppingList();
-                break;
-
-            case '/discover':
-                content = await renderDiscover();
-                break;
-
-            case '/settings':
-                content = renderSettings();
-                break;
-
-            default:
-                if (hash.startsWith('/recipes/edit/')) {
-                    const recipeId = hash.replace('/recipes/edit/', '');
-                    content = await renderRecipeForm(recipeId);
-                    setupRecipeFormHandler();
-                } else {
-                    content = '<h2>404 - Seite nicht gefunden</h2>';
-                }
+    async generateNewWeek() {
+        if (this.recipes.length === 0) {
+            await modal().alert('Füge zuerst Rezepte hinzu!');
+            return;
         }
 
-        appContainer.innerHTML = content;
-    } catch (error) {
-        console.error('Router Fehler:', error);
-        appContainer.innerHTML = `
-            <article>
-                <h3>Fehler</h3>
-                <p>Beim Laden der Seite ist ein Fehler aufgetreten.</p>
-                <pre>${error.message}</pre>
-            </article>
-        `;
-    }
-}
+        const confirmed = await modal().confirm(
+            'Neuen Wochenplan generieren?',
+            'Der aktuelle Plan wird überschrieben.'
+        );
+        if (!confirmed) return;
 
-/**
- * Aktualisiert die Navigation (aktive Links)
- */
-function updateNavigation(currentHash) {
-    const links = document.querySelectorAll('.nav-link');
-    links.forEach(link => {
-        const href = link.getAttribute('href').slice(1);
-        if (href === currentHash || (href === '/' && currentHash === '')) {
-            link.classList.add('active');
-        } else {
-            link.classList.remove('active');
-        }
-    });
-}
+        const availableRecipes = [...this.recipes];
+        const days = [];
 
-/**
- * Setup für Rezept-Formular
- */
-function setupRecipeFormHandler() {
-    setTimeout(() => {
-        const form = document.getElementById('recipe-form');
-        if (form) {
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const formData = new FormData(form);
-                await saveRecipeFromForm(formData);
-                window.location.hash = '/recipes';
+        // Get Monday of current week
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const monday = new Date(now);
+        monday.setDate(now.getDate() + diff);
+        monday.setHours(0, 0, 0, 0);
+
+        for (let i = 0; i < 7; i++) {
+            const dayDate = new Date(monday);
+            dayDate.setDate(monday.getDate() + i);
+
+            let recipe;
+            if (availableRecipes.length > 0) {
+                const randomIndex = Math.floor(Math.random() * availableRecipes.length);
+                recipe = availableRecipes.splice(randomIndex, 1)[0];
+            } else {
+                const randomIndex = Math.floor(Math.random() * this.recipes.length);
+                recipe = this.recipes[randomIndex];
+            }
+
+            days.push({
+                dayName: DAYS[i],
+                date: dayDate.toISOString(),
+                recipeId: recipe.id
             });
         }
-    }, 100);
-}
 
-/**
- * Hilfsfunktionen für Navigation
- */
-function showRecipeForm() {
-    window.location.hash = '/recipes/new';
-}
+        const weekplan = {
+            weekId: generateUUID(),
+            startDate: monday.toISOString(),
+            days
+        };
 
-function editRecipe(recipeId) {
-    window.location.hash = `/recipes/edit/${recipeId}`;
-}
+        await saveWeekplan(weekplan);
+        await setSetting('currentWeekId', weekplan.weekId);
+        this.weekplan = weekplan;
+        this.generateShoppingList();
+    },
 
-async function generateNewWeek() {
-    const confirmed = confirm('Möchtest du einen neuen Wochenplan generieren? Der aktuelle Plan wird überschrieben.');
-    if (confirmed) {
-        await generateWeekplan();
-        window.location.reload();
-    }
-}
+    openRecipeDrawer(dayIndex) {
+        this.selectedDayIndex = dayIndex;
+        $id('recipeSelectDrawer')?.open();
+    },
 
-async function loadDefaultRecipesAction() {
-    try {
-        const count = await loadDefaultRecipes();
-        alert(`${count} Standardrezept(e) wurden geladen!`);
-        window.location.hash = '/recipes';
-    } catch (err) {
-        alert('Fehler beim Laden: ' + err.message);
-    }
-}
+    async selectRecipeForDay(recipeId) {
+        if (this.selectedDayIndex === null || !this.weekplan) return;
 
-/**
- * Theme Management
- */
-function initTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-}
+        this.weekplan.days[this.selectedDayIndex].recipeId = recipeId;
+        // Convert reactive proxy to plain object for IndexedDB
+        const weekplanData = JSON.parse(JSON.stringify(this.weekplan));
+        await saveWeekplan(weekplanData);
+        this.generateShoppingList();
 
-function toggleTheme() {
-    const html = document.documentElement;
-    const currentTheme = html.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        $id('recipeSelectDrawer')?.close();
+        this.selectedDayIndex = null;
+    },
 
-    html.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+    // === SHOPPING LIST ===
+    generateShoppingList() {
+        if (!this.weekplan) {
+            this.shoppingList = [];
+            return;
+        }
 
-    // Update button text
-    const btn = document.getElementById('theme-toggle-btn');
-    if (btn) {
-        btn.textContent = newTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
-    }
-}
+        const ingredientsMap = new Map();
 
-/**
- * Einstellungen-Seite
- */
-function renderSettings() {
-    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-    const buttonText = currentTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+        for (const day of this.weekplan.days) {
+            const recipe = this.getRecipeById(day.recipeId);
+            if (!recipe) continue;
 
-    return `
-        <header class="page-header">
-            <h2>Einstellungen</h2>
-        </header>
-        <article>
-            <h4>Darstellung</h4>
-            <button id="theme-toggle-btn" onclick="window.toggleTheme()">${buttonText}</button>
-        </article>
-        <article>
-            <h4>Rezepte</h4>
-            <div class="settings-actions">
-                <button class="secondary" onclick="window.exportRecipesAction()">Exportieren</button>
-                <label class="secondary" role="button">
-                    Importieren
-                    <input type="file" accept=".json" onchange="window.importRecipesAction(this.files[0])" hidden>
-                </label>
-            </div>
-        </article>
-        <article>
-            <h4>Über die App</h4>
-            <p>Kochplaner - Dein persönlicher Wochenplaner für Mahlzeiten</p>
-            <small>Version 1.0</small>
-        </article>
-    `;
-}
-
-/**
- * Discover-Seite (TheMealDB API)
- */
-async function renderDiscover() {
-    let html = `
-        <header class="discover-header">
-            <h2>🌍 Rezept entdecken</h2>
-            <button onclick="window.fetchRandomRecipe()">🎲 Zufälliges Rezept</button>
-        </header>
-        <div id="api-recipe-container">
-            <p>Klicke auf "Zufälliges Rezept" um ein neues Gericht zu entdecken!</p>
-        </div>
-    `;
-
-    return html;
-}
-
-/**
- * Lädt ein zufälliges Rezept von TheMealDB
- */
-window.fetchRandomRecipe = async function() {
-    const container = document.getElementById('api-recipe-container');
-    container.innerHTML = '<article aria-busy="true">Lädt Rezept...</article>';
-
-    try {
-        const response = await fetch('https://www.themealdb.com/api/json/v1/1/random.php');
-        const data = await response.json();
-        const meal = data.meals[0];
-
-        // Zutaten extrahieren
-        const ingredients = [];
-        for (let i = 1; i <= 20; i++) {
-            const ingredient = meal[`strIngredient${i}`];
-            const measure = meal[`strMeasure${i}`];
-            if (ingredient && ingredient.trim()) {
-                ingredients.push({ ingredient, measure });
+            for (const ing of recipe.ingredients) {
+                const key = `${ing.name.toLowerCase()}|${ing.unit}`;
+                if (ingredientsMap.has(key)) {
+                    ingredientsMap.get(key).amount += parseFloat(ing.amount) || 0;
+                } else {
+                    ingredientsMap.set(key, {
+                        name: ing.name,
+                        amount: parseFloat(ing.amount) || 0,
+                        unit: ing.unit,
+                        checked: false
+                    });
+                }
             }
         }
 
-        let html = `
-            <article class="api-recipe-card">
-                <h3>${meal.strMeal}</h3>
-                <p><strong>Kategorie:</strong> ${meal.strCategory} | <strong>Region:</strong> ${meal.strArea}</p>
-                <img src="${meal.strMealThumb}" alt="${meal.strMeal}" class="recipe-image">
+        this.shoppingList = Array.from(ingredientsMap.values());
+    },
 
-                <h4>Zutaten:</h4>
-                <ul>
-                    ${ingredients.map(ing => `<li>${ing.measure} ${ing.ingredient}</li>`).join('')}
-                </ul>
+    async shareShoppingList() {
+        // Filter out checked items
+        const uncheckedItems = this.shoppingList.filter(item => !item.checked);
 
-                <h4>Anleitung:</h4>
-                <p class="instructions">${meal.strInstructions}</p>
+        if (uncheckedItems.length === 0) {
+            await modal().alert('Keine Artikel zum Teilen!', 'Alle Artikel wurden bereits abgehakt.');
+            return;
+        }
 
-                <button onclick="window.importApiRecipe('${meal.idMeal}')">
-                    Als eigenes Rezept speichern
-                </button>
-            </article>
-        `;
+        let text = '🛒 Einkaufsliste\n\n';
+        for (const item of uncheckedItems) {
+            text += `☐ ${item.amount} ${item.unit} ${item.name}\n`;
+        }
+        text += '\n— Erstellt mit Kochplaner';
 
-        container.innerHTML = html;
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: 'Einkaufsliste', text });
+                return;
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+            }
+        }
 
-        // Rezept temporär speichern für Import
-        window.currentApiRecipe = {
-            name: meal.strMeal,
-            ingredients: ingredients.map(ing => ({
-                name: ing.ingredient,
-                amount: parseFloat(ing.measure) || 1,
-                unit: ing.measure.replace(/[0-9.]/g, '').trim() || 'x'
-            }))
-        };
+        try {
+            await navigator.clipboard.writeText(text);
+            await modal().alert('In Zwischenablage kopiert!');
+        } catch {
+            await modal().alert(text);
+        }
+    },
 
-    } catch (error) {
-        console.error('API Fehler:', error);
-        container.innerHTML = `
-            <article>
-                <h4>Offline oder API nicht erreichbar</h4>
-                <p>Die App funktioniert offline, aber externe Rezepte können nur mit Internetverbindung geladen werden.</p>
-            </article>
-        `;
+    // === THEME ===
+    toggleTheme() {
+        this.theme = this.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', this.theme);
+        localStorage.setItem('theme', this.theme);
+    }
+});
+
+// Initialize theme
+document.documentElement.setAttribute('data-theme', store.theme);
+
+// Load initial data
+await store.loadRecipes();
+await store.loadWeekplan();
+
+// Mount petite-vue
+createApp(store).mount('#app');
+
+// Export store globally
+window.appStore = store;
+
+// Navigation function
+window.navigateTo = function (page) {
+    if (page >= 1 && page <= 4 && page !== store.activePage) {
+        store.activePage = page;
+        history.pushState(null, '', pageToHash[page]);
     }
 };
 
-/**
- * Importiert API-Rezept als eigenes
- */
-window.importApiRecipe = async function() {
-    if (!window.currentApiRecipe) return;
+// Set initial hash
+if (!window.location.hash || window.location.hash === '#') {
+    history.replaceState(null, '', pageToHash[store.activePage]);
+}
 
-    try {
-        const { saveRecipe } = await import('./storage.js');
-        await saveRecipe(window.currentApiRecipe);
-        alert('✓ Rezept erfolgreich gespeichert!');
-        window.location.hash = '/recipes';
-    } catch (error) {
-        alert('Fehler beim Speichern: ' + error.message);
+// Handle back/forward
+window.addEventListener('hashchange', () => {
+    const page = getPageFromHash();
+    if (page !== store.activePage) {
+        store.activePage = page;
     }
+});
+
+// Dark/Light toggle (global)
+window.darkLightToggle = function () {
+    store.toggleTheme();
 };
 
-// App starten
-init();
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(() => console.log('[App] Service Worker registered'))
+            .catch(err => console.error('[App] SW registration failed:', err));
+    });
+}
+
+console.log('[App] Ready!');

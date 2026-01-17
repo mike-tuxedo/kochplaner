@@ -1,0 +1,26 @@
+<div class="page-header">
+    <h2>Einkaufsliste</h2>
+    <button :class="{ outline: theme === 'dark' }" v-if="shoppingList.length > 0" @click="shareShoppingList()">Einkaufsliste Teilen</button>
+</div>
+
+<!-- Keine Einkaufsliste -->
+<div v-if="shoppingList.length === 0" class="empty-state">
+    <p>Keine Einkaufsliste verfügbar.</p>
+    <p>Erstelle zuerst einen Wochenplan!</p>
+    <button class="mt-1" :class="{ outline: theme === 'dark' }" @click="navigateTo(1)">Zum Wochenplan</button>
+</div>
+
+<!-- Einkaufsliste -->
+<article v-if="shoppingList.length > 0">
+    <div class="shopping-list">
+        <div v-for="(item, index) in shoppingList" :key="index"
+             class="item" :class="{ checked: item.checked }">
+            <input type="checkbox" :id="'item-' + index"
+                   v-model="item.checked">
+            <label :for="'item-' + index" class="ingredient-info">
+                <div>{{ item.name }}</div>
+                <div class="amount">{{ item.amount }} {{ item.unit }}</div>
+            </label>
+        </div>
+    </div>
+</article>

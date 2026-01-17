@@ -1,0 +1,25 @@
+<div class="page-header">
+    <h2>Meine Rezepte</h2>
+    <button :class="{ outline: theme === 'dark' }" v-if="recipes.length !== 0" @click="showRecipeForm()">+ Neu Rezept erstellen</button>
+</div>
+
+<!-- Keine Rezepte -->
+<div v-if="recipes.length === 0" class="empty-state">
+    <p>Noch keine Rezepte vorhanden.</p>
+    <p>Füge dein erstes Lieblingsrezept hinzu!</p>
+    <button class="mt-1" :class="{ outline: theme === 'dark' }" @click="showRecipeForm()">Neues Rezept erstellen</button>
+</div>
+
+<!-- Rezepte-Liste -->
+<div v-if="recipes.length > 0" class="recipe-list">
+    <article v-for="recipe in recipes" :key="recipe.id" class="recipe-card">
+        <div class="recipe-header">
+            <h4>{{ recipe.name }}</h4>
+            <span class="recipe-meta">{{ recipe.ingredients.length }} Zutaten</span>
+        </div>
+        <div class="actions">
+            <button class="btn-small contrast" :class="{ outline: theme === 'dark' }" @click="editRecipe(recipe)">Bearbeiten</button>
+            <button class="btn-small secondary" :class="{ outline: theme === 'dark' }" @click="deleteRecipe(recipe.id)">Löschen</button>
+        </div>
+    </article>
+</div>
