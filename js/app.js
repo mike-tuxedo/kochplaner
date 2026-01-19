@@ -648,7 +648,7 @@ if ('serviceWorker' in navigator) {
 }
 
 // Check for app updates via version in localStorage
-const APP_VERSION = '1.4';
+const APP_VERSION = '1.5';
 const lastVersion = localStorage.getItem('appVersion');
 if (lastVersion && lastVersion !== APP_VERSION) {
     // Show toast after a short delay to ensure DOM is ready
