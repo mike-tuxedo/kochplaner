@@ -135,15 +135,10 @@ const store = reactive({
             return;
         }
 
-        // Filter out empty ingredients
+        // Filter out empty ingredients (ingredients are optional)
         this.editingRecipe.ingredients = this.editingRecipe.ingredients.filter(
             ing => ing.name.trim()
         );
-
-        if (this.editingRecipe.ingredients.length === 0) {
-            await modal().alert('Bitte füge mindestens eine Zutat hinzu.');
-            return;
-        }
 
         // Convert reactive proxy to plain object for IndexedDB
         const recipeData = JSON.parse(JSON.stringify(this.editingRecipe));
