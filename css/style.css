@@ -588,7 +588,7 @@ html {
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin-top: 4rem;
+        padding-top: 4rem !important;
 
         section {
             margin-bottom: 10rem;
@@ -652,7 +652,7 @@ html {
             .welcome-actions {
                 display: flex;
                 flex-direction: column;
-                gap: 0.75rem;
+                gap: 1.5rem;
 
                 button {
                     width: 100%;
@@ -674,6 +674,10 @@ html {
                 background: var(--pico-card-background-color);
                 border-radius: var(--pico-border-radius);
                 color: var(--pico-muted-color);
+            }
+
+            .welcome-closing-content {
+                max-width: 800px;
             }
 
             .showmore {
@@ -703,8 +707,12 @@ html {
             .feature-teaser {
                 display: flex;
                 align-items: center;
-                gap: 10rem;
+                gap: 4rem;
                 margin-bottom: 6rem;
+
+                @media (min-width: 845px) {
+                    gap: 10rem;
+                }
 
                 &.reverse {
                     flex-direction: row-reverse;
@@ -1005,6 +1013,14 @@ html {
         gap: 2rem;
     }
 
+    .gap-1 {
+        gap: 1rem;
+    }
+    
+    .gap-2 {
+        gap: 2rem;
+    }
+
     .mt-0 {
         margin-top: 0rem;
     }
@@ -1051,4 +1067,11 @@ html {
     50% {
         transform: translateX(-50%) translateY(6px);
     }
+}
+
+/* ==========================================
+    Bubbles Toggle
+========================================== */
+.bubbles-disabled .bubbles {
+    display: none;
 }

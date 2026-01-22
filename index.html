@@ -41,27 +41,39 @@
     <!-- Bottom Navigation (hidden on welcome page) -->
     <footer class="pico" :data-color="theme" :class="{ 'hide': activePage === 0 }">
         <div role="group">
-            <button :class="[activePage === 1 ? 'active' : '', theme === 'dark' ? 'outline' : '']" @click="navigateTo(1)">
+            <button :class="[activePage === 1 ? 'active' : '', theme === 'dark' ? 'outline' : '']"
+                @click="navigateTo(1)">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M9 1V3H15V1H17V3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H7V1H9ZM20 11H4V19H20V11ZM8 14V16H6V14H8ZM18 14V16H10V14H18ZM7 5H4V9H20V5H17V7H15V5H9V7H7V5Z"></path>
+                    <path
+                        d="M9 1V3H15V1H17V3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H7V1H9ZM20 11H4V19H20V11ZM8 14V16H6V14H8ZM18 14V16H10V14H18ZM7 5H4V9H20V5H17V7H15V5H9V7H7V5Z">
+                    </path>
                 </svg>
                 <span>Plan</span>
             </button>
-            <button :class="[activePage === 2 ? 'active' : '', theme === 'dark' ? 'outline' : '']" @click="navigateTo(2)">
+            <button :class="[activePage === 2 ? 'active' : '', theme === 'dark' ? 'outline' : '']"
+                @click="navigateTo(2)">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M14.2683 12.1466L13.4147 13.0002L20.4858 20.0712L19.0716 21.4854L12.0005 14.4144L4.92946 21.4854L3.51525 20.0712L12.854 10.7324C12.2664 9.27549 12.8738 7.17715 14.4754 5.57554C16.428 3.62292 19.119 3.14805 20.4858 4.51488C21.8526 5.88172 21.3778 8.57267 19.4251 10.5253C17.8235 12.1269 15.7252 12.7343 14.2683 12.1466ZM4.22235 3.80777L10.9399 10.5253L8.11144 13.3537L4.22235 9.46463C2.66026 7.90253 2.66026 5.36987 4.22235 3.80777Z"></path>
+                    <path
+                        d="M14.2683 12.1466L13.4147 13.0002L20.4858 20.0712L19.0716 21.4854L12.0005 14.4144L4.92946 21.4854L3.51525 20.0712L12.854 10.7324C12.2664 9.27549 12.8738 7.17715 14.4754 5.57554C16.428 3.62292 19.119 3.14805 20.4858 4.51488C21.8526 5.88172 21.3778 8.57267 19.4251 10.5253C17.8235 12.1269 15.7252 12.7343 14.2683 12.1466ZM4.22235 3.80777L10.9399 10.5253L8.11144 13.3537L4.22235 9.46463C2.66026 7.90253 2.66026 5.36987 4.22235 3.80777Z">
+                    </path>
                 </svg>
                 <span>Rezepte</span>
             </button>
-            <button :class="[activePage === 3 ? 'active' : '', theme === 'dark' ? 'outline' : '']" @click="navigateTo(3)">
+            <button :class="[activePage === 3 ? 'active' : '', theme === 'dark' ? 'outline' : '']"
+                @click="navigateTo(3)">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12.0049 2C15.3186 2 18.0049 4.68629 18.0049 8V9H22.0049V11H20.8379L20.0813 20.083C20.0381 20.6013 19.6048 21 19.0847 21H4.92502C4.40493 21 3.97166 20.6013 3.92847 20.083L3.17088 11H2.00488V9H6.00488V8C6.00488 4.68629 8.69117 2 12.0049 2ZM18.8379 11H5.17088L5.84502 19H18.1647L18.8379 11ZM12.0049 4C9.86269 4 8.1138 5.68397 8.00978 7.80036L8.00488 8V9H16.0049V8C16.0049 5.8578 14.3209 4.10892 12.2045 4.0049L12.0049 4Z"></path>
+                    <path
+                        d="M12.0049 2C15.3186 2 18.0049 4.68629 18.0049 8V9H22.0049V11H20.8379L20.0813 20.083C20.0381 20.6013 19.6048 21 19.0847 21H4.92502C4.40493 21 3.97166 20.6013 3.92847 20.083L3.17088 11H2.00488V9H6.00488V8C6.00488 4.68629 8.69117 2 12.0049 2ZM18.8379 11H5.17088L5.84502 19H18.1647L18.8379 11ZM12.0049 4C9.86269 4 8.1138 5.68397 8.00978 7.80036L8.00488 8V9H16.0049V8C16.0049 5.8578 14.3209 4.10892 12.2045 4.0049L12.0049 4Z">
+                    </path>
                 </svg>
                 <span>Einkauf</span>
             </button>
-            <button :class="[activePage === 4 ? 'active' : '', theme === 'dark' ? 'outline' : '']" @click="navigateTo(4)">
+            <button :class="[activePage === 4 ? 'active' : '', theme === 'dark' ? 'outline' : '']"
+                @click="navigateTo(4)">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 1L20.2169 6.5V17.5L12 23L3.78314 17.5V6.5L12 1ZM12 3.311L5.78314 7.65311V16.3469L12 20.689L18.2169 16.3469V7.65311L12 3.311ZM12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12C16 14.2091 14.2091 16 12 16ZM12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z"></path>
+                    <path
+                        d="M12 1L20.2169 6.5V17.5L12 23L3.78314 17.5V6.5L12 1ZM12 3.311L5.78314 7.65311V16.3469L12 20.689L18.2169 16.3469V7.65311L12 3.311ZM12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12C16 14.2091 14.2091 16 12 16ZM12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z">
+                    </path>
                 </svg>
                 <span>Mehr</span>
             </button>
@@ -72,10 +84,8 @@
     <app-drawer id="recipeSelectDrawer" class="pico" :data-color="theme">
         <h3>Rezept auswählen</h3>
         <div class="drawer-recipe-list">
-            <div v-for="recipe in recipes" :key="recipe.id"
-                 class="drawer-recipe-item"
-                 @click="selectRecipeForDay(recipe.id)"
-                 close-drawer>
+            <div v-for="recipe in recipes" :key="recipe.id" class="drawer-recipe-item"
+                @click="selectRecipeForDay(recipe.id)" close-drawer>
                 {{ recipe.name }}
             </div>
         </div>
@@ -93,7 +103,8 @@
 
             <label>
                 Zubereitung <small>(optional)</small>
-                <textarea v-model="editingRecipe.description" placeholder="Kurze Beschreibung oder Notizen zum Rezept..." rows="10"></textarea>
+                <textarea v-model="editingRecipe.description"
+                    placeholder="Kurze Beschreibung oder Notizen zum Rezept..." rows="10"></textarea>
             </label>
 
             <label>Foto <small>(optional)</small></label>
@@ -103,7 +114,12 @@
                     <button type="button" class="photo-remove" @click="removePhoto()">×</button>
                 </div>
                 <label v-else class="photo-upload-btn" role="button" :class="{ outline: theme === 'dark' }">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M21 15V18H24V20H21V23H19V20H16V18H19V15H21ZM21.0082 3C21.556 3 22 3.44495 22 3.9934V13H20V5H4V18.999L14 9L17 12V14.829L14 11.8284L6.827 19H14V21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H21.0082ZM8 7C9.10457 7 10 7.89543 10 9C10 10.1046 9.10457 11 8 11C6.89543 11 6 10.1046 6 9C6 7.89543 6.89543 7 8 7Z"></path></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24"
+                        height="24">
+                        <path
+                            d="M21 15V18H24V20H21V23H19V20H16V18H19V15H21ZM21.0082 3C21.556 3 22 3.44495 22 3.9934V13H20V5H4V18.999L14 9L17 12V14.829L14 11.8284L6.827 19H14V21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H21.0082ZM8 7C9.10457 7 10 7.89543 10 9C10 10.1046 9.10457 11 8 11C6.89543 11 6 10.1046 6 9C6 7.89543 6.89543 7 8 7Z">
+                        </path>
+                    </svg>
                     Foto hinzufügen
                     <input type="file" accept="image/*" @change="handlePhotoUpload($event)" hidden>
                 </label>
@@ -117,10 +133,12 @@
                         <input type="number" v-model="ing.amount" placeholder="Menge" step="0.1">
                         <input type="text" v-model="ing.unit" placeholder="Einheit">
                     </div>
-                    <button type="button" class="contrast ingredient-delete btn-small" :class="{ outline: theme === 'dark' }" @click="removeIngredient(idx)">−</button>
+                    <button type="button" class="contrast ingredient-delete btn-small"
+                        :class="{ outline: theme === 'dark' }" @click="removeIngredient(idx)">−</button>
                 </div>
             </div>
-            <button type="button" class="secondary add-ingredient-btn" :class="{ outline: theme === 'dark' }" @click="addIngredient()">+ Zutat</button>
+            <button type="button" class="secondary add-ingredient-btn" :class="{ outline: theme === 'dark' }"
+                @click="addIngredient()">+ Zutat</button>
 
             <div class="form-actions">
                 <button type="button" class="secondary" @click="cancelEdit()">Abbrechen</button>
@@ -137,7 +155,8 @@
                 <img v-if="suggestedRecipe.photo" :src="suggestedRecipe.photo" alt="" class="suggestion-photo">
                 <div class="suggestion-card-content">
                     <h4>{{ suggestedRecipe.name }}</h4>
-                    <p v-if="suggestedRecipe.description" class="suggestion-description">{{ suggestedRecipe.description }}</p>
+                    <p v-if="suggestedRecipe.description" class="suggestion-description">{{ suggestedRecipe.description
+                        }}</p>
                     <details>
                         <summary>{{ suggestedRecipe.ingredients.length }} Zutaten</summary>
                         <ul class="ingredients">
@@ -150,11 +169,21 @@
             </div>
             <div class="suggestion-actions">
                 <button class="secondary" :class="{ outline: theme === 'dark' }" @click="getNewSuggestion()">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M5.46257 4.43262C7.21556 2.91688 9.5007 2 12 2C17.5228 2 22 6.47715 22 12C22 14.1361 21.3302 16.1158 20.1892 17.7406L17 12H20C20 7.58172 16.4183 4 12 4C9.84982 4 7.89777 4.84827 6.46023 6.22842L5.46257 4.43262ZM18.5374 19.5674C16.7844 21.0831 14.4993 22 12 22C6.47715 22 2 17.5228 2 12C2 9.86386 2.66979 7.88416 3.8108 6.25944L7 12H4C4 16.4183 7.58172 20 12 20C14.1502 20 16.1022 19.1517 17.5398 17.7716L18.5374 19.5674Z"></path></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18"
+                        height="18">
+                        <path
+                            d="M5.46257 4.43262C7.21556 2.91688 9.5007 2 12 2C17.5228 2 22 6.47715 22 12C22 14.1361 21.3302 16.1158 20.1892 17.7406L17 12H20C20 7.58172 16.4183 4 12 4C9.84982 4 7.89777 4.84827 6.46023 6.22842L5.46257 4.43262ZM18.5374 19.5674C16.7844 21.0831 14.4993 22 12 22C6.47715 22 2 17.5228 2 12C2 9.86386 2.66979 7.88416 3.8108 6.25944L7 12H4C4 16.4183 7.58172 20 12 20C14.1502 20 16.1022 19.1517 17.5398 17.7716L18.5374 19.5674Z">
+                        </path>
+                    </svg>
                     Andere Idee
                 </button>
                 <button @click="adoptSuggestion()">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM11 11H7V13H11V17H13V13H17V11H13V7H11V11Z"></path></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18"
+                        height="18">
+                        <path
+                            d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM11 11H7V13H11V17H13V13H17V11H13V7H11V11Z">
+                        </path>
+                    </svg>
                     Übernehmen
                 </button>
             </div>
@@ -174,6 +203,630 @@
     <script src="js/app.js" type="module"></script>
     <script src="js/components/drawer.js"></script>
     <script src="js/components/modal.js"></script>
+
+
+    <div class="bubbles">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <style>
+        .bubbles {
+            position: fixed;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .bubble {
+            position: absolute;
+            left: var(--bubble-left-offset);
+            bottom: -75%;
+            display: block;
+            width: var(--bubble-radius);
+            height: var(--bubble-radius);
+            border-radius: 50%;
+            animation: float-up var(--bubble-float-duration) var(--bubble-float-delay) ease-in infinite;
+            background: rgba(255, 217, 46, 0.082);
+        }
+
+        .bubble::before {
+            position: absolute;
+            content: "";
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 217, 46, 0.041);
+            border-radius: inherit;
+            animation: var(--bubble-sway-type) var(--bubble-sway-duration) var(--bubble-sway-delay) ease-in-out alternate infinite;
+        }
+
+        .bubble:nth-child(0) {
+            --bubble-left-offset: 34vw;
+            --bubble-radius: 8vw;
+            --bubble-float-duration: 16s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: -8s;
+            --bubble-sway-delay: 2s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(1) {
+            --bubble-left-offset: 29vw;
+            --bubble-radius: 9vw;
+            --bubble-float-duration: 16s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: -8s;
+            --bubble-sway-delay: 4s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(2) {
+            --bubble-left-offset: 30vw;
+            --bubble-radius: 2vw;
+            --bubble-float-duration: 18s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: -8s;
+            --bubble-sway-delay: 1s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(3) {
+            --bubble-left-offset: 6vw;
+            --bubble-radius: 9vw;
+            --bubble-float-duration: 17s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 2s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(4) {
+            --bubble-left-offset: 9vw;
+            --bubble-radius: 6vw;
+            --bubble-float-duration: 14s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: 2s;
+            --bubble-sway-delay: 2s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(5) {
+            --bubble-left-offset: 14vw;
+            --bubble-radius: 4vw;
+            --bubble-float-duration: 15s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 4s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(6) {
+            --bubble-left-offset: 67vw;
+            --bubble-radius: 10vw;
+            --bubble-float-duration: 17s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: 2s;
+            --bubble-sway-delay: 4s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(7) {
+            --bubble-left-offset: 32vw;
+            --bubble-radius: 4vw;
+            --bubble-float-duration: 13s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 2s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(8) {
+            --bubble-left-offset: 47vw;
+            --bubble-radius: 9vw;
+            --bubble-float-duration: 14s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: -2s;
+            --bubble-sway-delay: 4s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(9) {
+            --bubble-left-offset: 4vw;
+            --bubble-radius: 3vw;
+            --bubble-float-duration: 16s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: 5s;
+            --bubble-sway-delay: 2s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(10) {
+            --bubble-left-offset: 0vw;
+            --bubble-radius: 5vw;
+            --bubble-float-duration: 18s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 4s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(11) {
+            --bubble-left-offset: 20vw;
+            --bubble-radius: 3vw;
+            --bubble-float-duration: 18s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 2s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(12) {
+            --bubble-left-offset: 41vw;
+            --bubble-radius: 3vw;
+            --bubble-float-duration: 12s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: -2s;
+            --bubble-sway-delay: 2s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(13) {
+            --bubble-left-offset: 99vw;
+            --bubble-radius: 3vw;
+            --bubble-float-duration: 12s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 2s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(14) {
+            --bubble-left-offset: 92vw;
+            --bubble-radius: 6vw;
+            --bubble-float-duration: 12s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: 2s;
+            --bubble-sway-delay: 4s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(15) {
+            --bubble-left-offset: 49vw;
+            --bubble-radius: 2vw;
+            --bubble-float-duration: 16s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 0s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(16) {
+            --bubble-left-offset: 62vw;
+            --bubble-radius: 7vw;
+            --bubble-float-duration: 18s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 1s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(17) {
+            --bubble-left-offset: 43vw;
+            --bubble-radius: 10vw;
+            --bubble-float-duration: 16s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: 5s;
+            --bubble-sway-delay: 1s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(18) {
+            --bubble-left-offset: 9vw;
+            --bubble-radius: 5vw;
+            --bubble-float-duration: 17s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: -8s;
+            --bubble-sway-delay: 1s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(19) {
+            --bubble-left-offset: 16vw;
+            --bubble-radius: 7vw;
+            --bubble-float-duration: 18s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 4s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(20) {
+            --bubble-left-offset: 11vw;
+            --bubble-radius: 8vw;
+            --bubble-float-duration: 12s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: -8s;
+            --bubble-sway-delay: 1s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(21) {
+            --bubble-left-offset: 18vw;
+            --bubble-radius: 6vw;
+            --bubble-float-duration: 13s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 2s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(22) {
+            --bubble-left-offset: 36vw;
+            --bubble-radius: 10vw;
+            --bubble-float-duration: 18s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 0s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(23) {
+            --bubble-left-offset: 66vw;
+            --bubble-radius: 10vw;
+            --bubble-float-duration: 12s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: 5s;
+            --bubble-sway-delay: 4s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(24) {
+            --bubble-left-offset: 47vw;
+            --bubble-radius: 2vw;
+            --bubble-float-duration: 16s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: -8s;
+            --bubble-sway-delay: 1s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(25) {
+            --bubble-left-offset: 20vw;
+            --bubble-radius: 6vw;
+            --bubble-float-duration: 14s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: 2s;
+            --bubble-sway-delay: 0s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(26) {
+            --bubble-left-offset: 28vw;
+            --bubble-radius: 3vw;
+            --bubble-float-duration: 15s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 3s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(27) {
+            --bubble-left-offset: 14vw;
+            --bubble-radius: 2vw;
+            --bubble-float-duration: 12s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: -2s;
+            --bubble-sway-delay: 0s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(28) {
+            --bubble-left-offset: 43vw;
+            --bubble-radius: 5vw;
+            --bubble-float-duration: 16s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: 2s;
+            --bubble-sway-delay: 2s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(29) {
+            --bubble-left-offset: 59vw;
+            --bubble-radius: 7vw;
+            --bubble-float-duration: 18s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: 5s;
+            --bubble-sway-delay: 0s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(30) {
+            --bubble-left-offset: 63vw;
+            --bubble-radius: 5vw;
+            --bubble-float-duration: 12s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: 5s;
+            --bubble-sway-delay: 3s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(31) {
+            --bubble-left-offset: 72vw;
+            --bubble-radius: 3vw;
+            --bubble-float-duration: 16s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: 2s;
+            --bubble-sway-delay: 3s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(32) {
+            --bubble-left-offset: 66vw;
+            --bubble-radius: 5vw;
+            --bubble-float-duration: 14s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: -2s;
+            --bubble-sway-delay: 0s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(33) {
+            --bubble-left-offset: 97vw;
+            --bubble-radius: 9vw;
+            --bubble-float-duration: 14s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: 5s;
+            --bubble-sway-delay: 1s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(34) {
+            --bubble-left-offset: 97vw;
+            --bubble-radius: 4vw;
+            --bubble-float-duration: 13s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 0s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(35) {
+            --bubble-left-offset: 99vw;
+            --bubble-radius: 2vw;
+            --bubble-float-duration: 17s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: 5s;
+            --bubble-sway-delay: 4s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(36) {
+            --bubble-left-offset: 77vw;
+            --bubble-radius: 6vw;
+            --bubble-float-duration: 14s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: 5s;
+            --bubble-sway-delay: 1s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(37) {
+            --bubble-left-offset: 98vw;
+            --bubble-radius: 8vw;
+            --bubble-float-duration: 14s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: -8s;
+            --bubble-sway-delay: 0s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(38) {
+            --bubble-left-offset: 95vw;
+            --bubble-radius: 6vw;
+            --bubble-float-duration: 13s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: -8s;
+            --bubble-sway-delay: 3s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(39) {
+            --bubble-left-offset: 53vw;
+            --bubble-radius: 8vw;
+            --bubble-float-duration: 18s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: 2s;
+            --bubble-sway-delay: 3s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(40) {
+            --bubble-left-offset: 22vw;
+            --bubble-radius: 9vw;
+            --bubble-float-duration: 16s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: -2s;
+            --bubble-sway-delay: 4s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(41) {
+            --bubble-left-offset: 53vw;
+            --bubble-radius: 10vw;
+            --bubble-float-duration: 13s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: 5s;
+            --bubble-sway-delay: 2s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(42) {
+            --bubble-left-offset: 94vw;
+            --bubble-radius: 5vw;
+            --bubble-float-duration: 14s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 0s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(43) {
+            --bubble-left-offset: 49vw;
+            --bubble-radius: 9vw;
+            --bubble-float-duration: 16s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: -8s;
+            --bubble-sway-delay: 0s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(44) {
+            --bubble-left-offset: 32vw;
+            --bubble-radius: 6vw;
+            --bubble-float-duration: 15s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: -8s;
+            --bubble-sway-delay: 1s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(45) {
+            --bubble-left-offset: 49vw;
+            --bubble-radius: 3vw;
+            --bubble-float-duration: 16s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: -2s;
+            --bubble-sway-delay: 2s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(46) {
+            --bubble-left-offset: 84vw;
+            --bubble-radius: 7vw;
+            --bubble-float-duration: 13s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: -2s;
+            --bubble-sway-delay: 0s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(47) {
+            --bubble-left-offset: 12vw;
+            --bubble-radius: 4vw;
+            --bubble-float-duration: 12s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: -2s;
+            --bubble-sway-delay: 1s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        .bubble:nth-child(48) {
+            --bubble-left-offset: 80vw;
+            --bubble-radius: 6vw;
+            --bubble-float-duration: 18s;
+            --bubble-sway-duration: 10s;
+            --bubble-float-delay: -8s;
+            --bubble-sway-delay: 3s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(49) {
+            --bubble-left-offset: 36vw;
+            --bubble-radius: 10vw;
+            --bubble-float-duration: 17s;
+            --bubble-sway-duration: 9s;
+            --bubble-float-delay: -5s;
+            --bubble-sway-delay: 0s;
+            --bubble-sway-type: sway-left-to-right;
+        }
+
+        .bubble:nth-child(50) {
+            --bubble-left-offset: 47vw;
+            --bubble-radius: 1vw;
+            --bubble-float-duration: 17s;
+            --bubble-sway-duration: 8s;
+            --bubble-float-delay: 2s;
+            --bubble-sway-delay: 3s;
+            --bubble-sway-type: sway-right-to-left;
+        }
+
+        @keyframes float-up {
+            to {
+                transform: translateY(-175vh);
+            }
+        }
+
+        @keyframes sway-left-to-right {
+            from {
+                transform: translateX(-100%);
+            }
+
+            to {
+                transform: translateX(100%);
+            }
+        }
+
+        @keyframes sway-right-to-left {
+            from {
+                transform: translateX(100%);
+            }
+
+            to {
+                transform: translateX(-100%);
+            }
+        }
+    </style>
 </body>
 
 </html>

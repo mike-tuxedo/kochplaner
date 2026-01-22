@@ -5,8 +5,12 @@
 <article class="settings-section">
     <h4>Darstellung</h4>
     <label>
-        <input name="terms" type="checkbox" role="switch" @change="toggleTheme()"/>
+        <input type="checkbox" role="switch" @change="toggleTheme()"/>
         {{ theme === 'light' ? '☀️ Light Mode' : '🌙 Dark Mode' }}
+    </label>
+    <label>
+        <input type="checkbox" role="switch" :checked="bubblesEnabled" @change="toggleBubbles()"/>
+        🫧 Hintergrund-Animation
     </label>
 </article>
 

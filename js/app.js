@@ -68,7 +68,8 @@ const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 const store = reactive({
     // Navigation
     activePage: getPageFromHash(),
-    theme: localStorage.getItem('theme') || 'dark',
+    theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+    bubblesEnabled: localStorage.getItem('bubblesEnabled') !== 'false',
 
     // Welcome page
     isIOSDevice: isIOS,
@@ -593,11 +594,23 @@ const store = reactive({
         this.theme = this.theme === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', this.theme);
         localStorage.setItem('theme', this.theme);
+    },
+
+    // === BUBBLES ===
+    toggleBubbles() {
+        this.bubblesEnabled = !this.bubblesEnabled;
+        document.body.classList.toggle('bubbles-disabled', !this.bubblesEnabled);
+        localStorage.setItem('bubblesEnabled', this.bubblesEnabled);
     }
 });
 
 // Initialize theme
 document.documentElement.setAttribute('data-theme', store.theme);
+
+// Initialize bubbles
+if (!store.bubblesEnabled) {
+    document.body.classList.add('bubbles-disabled');
+}
 
 // Load initial data
 await store.loadRecipes();
