@@ -10,15 +10,15 @@
  */
 
 import init, { LoroDoc } from './lib/loro/loro_wasm.js';
+import { deriveDocId, deriveAesKey, encryptData, decryptData } from './crypto.js';
 
 // Constants
 const DB_NAME = 'kochplaner-loro';
 const DB_VERSION = 1;
 const STORE_NAME = 'documents';
-const DOC_ID = 'main';
 
 // Default WebSocket server URL (can be configured)
-const DEFAULT_WS_URL = 'ws://localhost:8080';
+const DEFAULT_WS_URL = 'wss://kochplaner-server.mike.fm-media-staging.at';
 
 /**
  * SyncManager - Manages Loro document and synchronization
@@ -29,9 +29,11 @@ class SyncManager {
         this.db = null;
         this.ws = null;
         this.wsUrl = null;
+        this.docId = null;
+        this.aesKey = null;
         this.isInitialized = false;
         this.isConnected = false;
-        this.lastSyncVersion = null;
+        this._lastSentVersion = null;
         this.onChangeCallback = null;
         this.onStatusChange = null;
         this.reconnectAttempts = 0;
@@ -40,10 +42,21 @@ class SyncManager {
     }
 
     /**
+     * Initialize encryption with a sync key
+     * Derives document ID and AES key from the sync key
+     */
+    async initWithKey(syncKey) {
+        this.docId = await deriveDocId(syncKey);
+        this.aesKey = await deriveAesKey(syncKey);
+        console.log('[Sync] Encryption initialized, docId:', this.docId);
+    }
+
+    /**
      * Initialize Loro WASM and load document from IndexedDB
      */
     async init() {
         if (this.isInitialized) return this;
+        if (!this.docId) throw new Error('Call initWithKey() before init()');
 
         console.log('[Sync] Initializing Loro...');
 
@@ -108,7 +121,7 @@ class SyncManager {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([STORE_NAME], 'readonly');
             const store = transaction.objectStore(STORE_NAME);
-            const request = store.get(DOC_ID);
+            const request = store.get(this.docId);
 
             request.onerror = () => reject(request.error);
             request.onsuccess = () => {
@@ -119,30 +132,24 @@ class SyncManager {
     }
 
     /**
-     * Save snapshot to IndexedDB (debounced)
+     * Save snapshot to IndexedDB (immediate, called from debounced _triggerSync)
      */
-    _saveSnapshot() {
-        if (this._saveTimeout) {
-            clearTimeout(this._saveTimeout);
+    async _saveSnapshotNow() {
+        try {
+            const snapshot = this.doc.export({ mode: 'snapshot' });
+            const transaction = this.db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+
+            await new Promise((resolve, reject) => {
+                const request = store.put({ id: this.docId, snapshot });
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve();
+            });
+
+            console.log('[Sync] Snapshot saved to IndexedDB');
+        } catch (err) {
+            console.error('[Sync] Failed to save snapshot:', err);
         }
-
-        this._saveTimeout = setTimeout(async () => {
-            try {
-                const snapshot = this.doc.export({ mode: 'snapshot' });
-                const transaction = this.db.transaction([STORE_NAME], 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-
-                await new Promise((resolve, reject) => {
-                    const request = store.put({ id: DOC_ID, snapshot });
-                    request.onerror = () => reject(request.error);
-                    request.onsuccess = () => resolve();
-                });
-
-                console.log('[Sync] Snapshot saved to IndexedDB');
-            } catch (err) {
-                console.error('[Sync] Failed to save snapshot:', err);
-            }
-        }, 500); // Debounce 500ms
     }
 
     /**
@@ -217,33 +224,45 @@ class SyncManager {
 
         this.ws.send(JSON.stringify({
             type: 'get',
-            payload: { id: DOC_ID }
+            payload: { id: this.docId }
         }));
     }
 
     /**
-     * Send update to server
+     * Send update to server (encrypts if key is set)
+     * Skips if document hasn't changed since last send.
      */
-    _sendUpdate() {
+    async _sendUpdate() {
         if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
         try {
-            // Reuse cached snapshot if available, otherwise export
-            const snapshot = this._lastSnapshot || this.doc.export({ mode: 'snapshot' });
-            this._lastSnapshot = null;
+            // Skip if nothing changed since last send
+            const currentVersion = this.doc.oplogVersion().encode();
+            if (this._lastSentVersion && this._bytesEqual(currentVersion, this._lastSentVersion)) {
+                return;
+            }
 
-            // Convert Uint8Array to base64 string (much more efficient than byte-by-byte JSON)
-            const base64 = this._uint8ToBase64(snapshot);
+            const snapshot = this.doc.export({ mode: 'snapshot' });
+
+            // Encrypt if key is available
+            let payload;
+            if (this.aesKey) {
+                const encrypted = await encryptData(this.aesKey, snapshot);
+                payload = this._uint8ToBase64(encrypted);
+            } else {
+                payload = this._uint8ToBase64(snapshot);
+            }
 
             this.ws.send(JSON.stringify({
                 type: 'update',
                 payload: {
-                    id: DOC_ID,
-                    binary: base64,
+                    id: this.docId,
+                    binary: payload,
                     encoding: 'base64'
                 }
             }));
 
+            this._lastSentVersion = currentVersion;
             console.log('[Sync] Update sent to server');
         } catch (err) {
             console.error('[Sync] Failed to send update:', err);
@@ -251,16 +270,27 @@ class SyncManager {
     }
 
     /**
+     * Compare two Uint8Array byte arrays for equality
+     */
+    _bytesEqual(a, b) {
+        if (!a || !b || a.length !== b.length) return false;
+        for (let i = 0; i < a.length; i++) {
+            if (a[i] !== b[i]) return false;
+        }
+        return true;
+    }
+
+    /**
      * Handle message from server
      */
-    _handleServerMessage(data) {
+    async _handleServerMessage(data) {
         try {
             const message = JSON.parse(data);
             console.log('[Sync] Received message:', message.type);
 
             if (message.type === 'get' || message.type === 'update') {
                 if (message.payload?.binary) {
-                    this._mergeRemoteData(message.payload.binary, message.payload.encoding);
+                    await this._mergeRemoteData(message.payload.binary, message.payload.encoding);
                 }
             }
         } catch (err) {
@@ -269,9 +299,9 @@ class SyncManager {
     }
 
     /**
-     * Merge remote data into local document
+     * Merge remote data into local document (decrypts if key is set)
      */
-    _mergeRemoteData(binaryData, encoding) {
+    async _mergeRemoteData(binaryData, encoding) {
         try {
             let binary;
             if (encoding === 'base64' || typeof binaryData === 'string') {
@@ -285,52 +315,30 @@ class SyncManager {
                 }
             }
 
-            // Capture state before merge for comparison
-            const weekplanBefore = JSON.stringify(this.doc.getMap('weekplan').toJSON());
-
-            // Create a temporary doc from remote snapshot to read remote state
-            let remoteDoc;
-            try {
-                remoteDoc = LoroDoc.fromSnapshot(binary);
-            } catch (e) {
-                // Not a snapshot format, try as update
-                remoteDoc = null;
-            }
-
-            // Import the remote snapshot/update
-            this.doc.import(binary);
-
-            const weekplanAfter = JSON.stringify(this.doc.getMap('weekplan').toJSON());
-            const weekplanChanged = weekplanBefore !== weekplanAfter;
-            console.log('[Sync] Remote data merged. Weekplan changed:', weekplanChanged);
-
-            // If Loro merge didn't change the weekplan but remote has a newer one, apply it manually
-            if (!weekplanChanged && remoteDoc) {
-                const remoteWeekplan = remoteDoc.getMap('weekplan').toJSON();
-                const localWeekplan = this.doc.getMap('weekplan').toJSON();
-                const remoteHasWeekplan = remoteWeekplan.weekId && remoteWeekplan.updatedAt;
-                const localHasWeekplan = localWeekplan.weekId && localWeekplan.updatedAt;
-
-                if (remoteHasWeekplan && (!localHasWeekplan || remoteWeekplan.updatedAt > localWeekplan.updatedAt)) {
-                    console.log('[Sync] Applying newer remote weekplan manually');
-                    const weekplanMap = this.doc.getMap('weekplan');
-                    weekplanMap.set('weekId', remoteWeekplan.weekId);
-                    weekplanMap.set('startDate', remoteWeekplan.startDate);
-                    weekplanMap.set('days', remoteWeekplan.days);
-                    weekplanMap.set('updatedAt', remoteWeekplan.updatedAt);
+            // Decrypt if key is available
+            if (this.aesKey) {
+                try {
+                    binary = await decryptData(this.aesKey, binary);
+                } catch (decErr) {
+                    console.warn('[Sync] Decryption failed, trying raw import as fallback');
                 }
             }
 
-            // Save to IndexedDB
-            this._saveSnapshot();
+            // Import the remote data (Loro handles merge automatically)
+            this.doc.import(binary);
 
-            // Notify UI immediately for remote changes
+            // Notify UI of remote changes immediately
             if (this.onChangeCallback) {
-                console.log('[Sync] Notifying UI of remote changes');
                 this.onChangeCallback();
-            } else {
-                console.warn('[Sync] No onChangeCallback set!');
             }
+
+            // Send merged state to server if it includes local ops the server doesn't have
+            if (this.isConnected) {
+                await this._sendUpdate();
+            }
+
+            // Defer IndexedDB save (batches rapid incoming updates)
+            this._scheduleSave();
         } catch (err) {
             console.error('[Sync] Failed to merge remote data:', err);
         }
@@ -433,7 +441,6 @@ class SyncManager {
         if (!this.doc) return null;
         const weekplanMap = this.doc.getMap('weekplan');
         const json = weekplanMap.toJSON();
-        console.log('[Sync] getWeekplan raw keys:', Object.keys(json));
 
         // Return null if empty
         if (!json.weekId) return null;
@@ -485,49 +492,51 @@ class SyncManager {
         this._triggerSync();
     }
 
+    /**
+     * Save a single shopping list item's checked state (optimized for toggle)
+     */
+    saveShoppingListItem(name, checked) {
+        if (!this.doc) return;
+
+        const checkedMap = this.doc.getMap('shoppingListChecked');
+        checkedMap.set(name, checked);
+
+        // Trigger sync
+        this._triggerSync();
+    }
+
     // ==========================================
     // Utility Methods
     // ==========================================
 
     /**
-     * Trigger sync: save to IndexedDB and send to server (debounced)
+     * Trigger sync: send to server quickly, defer IndexedDB save
      */
     _triggerSync() {
-        // Save to IndexedDB (already debounced at 500ms)
-        this._saveSnapshot();
-
-        // Notify UI (debounced)
-        this._notifyUI();
-
-        // Debounce server update to avoid excessive network calls
-        if (this._syncTimeout) {
-            clearTimeout(this._syncTimeout);
+        // Send over WebSocket with short debounce (150ms)
+        if (this._sendTimeout) {
+            clearTimeout(this._sendTimeout);
         }
-
-        this._syncTimeout = setTimeout(() => {
+        this._sendTimeout = setTimeout(async () => {
             if (this.isConnected) {
-                // Cache the snapshot so _sendUpdate can reuse it
-                this._lastSnapshot = this.doc.export({ mode: 'snapshot' });
-                this._sendUpdate();
+                await this._sendUpdate();
             }
-        }, 750);
+        }, 150);
+
+        // Defer IndexedDB save (3s debounce, batches rapid changes)
+        this._scheduleSave();
     }
 
     /**
-     * Notify UI of state changes (debounced)
+     * Schedule a deferred IndexedDB save (resets on each call)
      */
-    _notifyUI() {
-        if (!this.onChangeCallback) return;
-
-        if (this._notifyTimeout) {
-            clearTimeout(this._notifyTimeout);
+    _scheduleSave() {
+        if (this._saveTimeout) {
+            clearTimeout(this._saveTimeout);
         }
-
-        this._notifyTimeout = setTimeout(() => {
-            if (this.onChangeCallback) {
-                this.onChangeCallback();
-            }
-        }, 300);
+        this._saveTimeout = setTimeout(() => {
+            this._saveSnapshotNow();
+        }, 3000);
     }
 
     /**
@@ -561,14 +570,26 @@ class SyncManager {
     }
 
     /**
-     * Disconnect from server
+     * Disconnect from server and reset state
      */
     disconnect() {
+        // Flush pending save before disconnect
+        if (this._saveTimeout) {
+            clearTimeout(this._saveTimeout);
+            if (this.doc && this.db) this._saveSnapshotNow();
+        }
+        if (this._sendTimeout) clearTimeout(this._sendTimeout);
+
         if (this.ws) {
             this.ws.close();
             this.ws = null;
         }
         this.isConnected = false;
+        this.isInitialized = false;
+        this.doc = null;
+        this.docId = null;
+        this.aesKey = null;
+        this._lastSentVersion = null;
     }
 
     /**
@@ -587,6 +608,7 @@ class SyncManager {
      */
     syncNow() {
         if (this.isConnected) {
+            this._lastSentVersion = null; // Force full send
             this._requestState();
             this._sendUpdate();
         }

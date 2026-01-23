@@ -18,6 +18,8 @@ import {
     loadDefaultRecipes as loadDefaultRecipesFromDB,
     generateUUID
 } from './storage.js';
+import { generateSyncKey, storeSyncKey, loadSyncKey, clearSyncKey } from './crypto.js';
+import { renderQR, startScanner, stopScanner } from './qr.js';
 
 console.log('[App] Starting Kochplaner...');
 
@@ -80,6 +82,10 @@ const store = reactive({
     syncConnected: false,
     syncLoading: false,
     syncServerUrl: localStorage.getItem('syncServerUrl') || 'ws://localhost:8080',
+    syncState: (loadSyncKey() && localStorage.getItem('syncEnabled') === 'true') ? 'active' : 'none',
+    syncKey: loadSyncKey() || '',
+    syncKeyInput: '',
+    syncDecryptError: false,
 
     // Data
     recipes: [],
@@ -596,14 +602,10 @@ const store = reactive({
         this.shoppingList = Array.from(ingredientsMap.values());
     },
 
-    syncShoppingList() {
-        // Sync shopping list checked state if enabled
-        if (window.syncManager?.isInitialized) {
-            const checkedItems = {};
-            for (const item of this.shoppingList) {
-                checkedItems[item.name] = item.checked;
-            }
-            window.syncManager.saveShoppingListChecked(checkedItems);
+    syncShoppingList(item) {
+        // Sync only the changed item's checked state
+        if (window.syncManager?.isInitialized && item) {
+            window.syncManager.saveShoppingListItem(item.name, item.checked);
         }
     },
 
@@ -654,15 +656,132 @@ const store = reactive({
     },
 
     // === SYNC ===
-    async enableSync() {
-        if (this.syncLoading) return;
 
-        this.syncLoading = true;
+    /**
+     * Start a new sync session: generate key and connect
+     */
+    async startNewSync() {
+        const key = generateSyncKey();
+        this.syncKey = key;
+        storeSyncKey(key);
+        await this._connectSync(key);
+    },
+
+    /**
+     * Show the import key UI
+     */
+    showImportKey() {
+        this.syncKeyInput = '';
+        this.syncState = 'importing';
+    },
+
+    /**
+     * Import a sync key from text input and connect
+     */
+    async importSyncKey() {
+        const key = this.syncKeyInput.trim();
+        if (!key || key.length < 16) {
+            await modal().alert('Ungültiger Schlüssel. Bitte prüfe die Eingabe.');
+            return;
+        }
+        this.syncKey = key;
+        storeSyncKey(key);
+        await this._connectSync(key);
+    },
+
+    /**
+     * Start QR code scanner for key import
+     */
+    async startQRScanner() {
+        this.syncState = 'scanning';
         try {
-            // Dynamically import sync module
+            const video = document.getElementById('qr-video');
+            await startScanner(video, async (data) => {
+                stopScanner();
+                const key = data.trim();
+                if (key && key.length >= 16) {
+                    this.syncKey = key;
+                    this.syncKeyInput = key;
+                    storeSyncKey(key);
+                    await this._connectSync(key);
+                } else {
+                    await modal().alert('Ungültiger QR-Code. Bitte versuche es erneut.');
+                    this.syncState = 'importing';
+                }
+            });
+        } catch (err) {
+            console.error('[App] Camera error:', err);
+            await modal().alert('Kamera konnte nicht gestartet werden. Bitte gib den Schlüssel manuell ein.');
+            this.syncState = 'importing';
+        }
+    },
+
+    /**
+     * Stop QR scanner
+     */
+    cancelQRScanner() {
+        stopScanner();
+        this.syncState = 'importing';
+    },
+
+    /**
+     * Show the key sharing UI (QR + text)
+     */
+    async showShareKey() {
+        this.syncState = 'sharing';
+        // Render QR code after DOM update
+        setTimeout(async () => {
+            const canvas = document.getElementById('qr-canvas');
+            if (canvas) {
+                await renderQR(canvas, this.syncKey, 200);
+            }
+        }, 50);
+    },
+
+    /**
+     * Share sync key via Web Share API or clipboard
+     */
+    async shareSyncKey() {
+        const text = this.syncKey;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: 'Kochplaner Sync-Key', text });
+                return;
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            await modal().alert('Schlüssel in Zwischenablage kopiert!');
+        } catch {
+            // Fallback: select text for manual copy
+            await modal().alert('Bitte kopiere den Schlüssel manuell.');
+        }
+    },
+
+    /**
+     * Go back to active sync state from sharing
+     */
+    backToSyncActive() {
+        this.syncState = 'active';
+    },
+
+    /**
+     * Internal: connect to sync server with a key
+     */
+    async _connectSync(syncKey) {
+        if (this.syncLoading) return;
+        this.syncLoading = true;
+        this.syncDecryptError = false;
+
+        try {
             const { syncManager } = await import('./sync.js');
 
-            // Initialize Loro
+            // Initialize encryption and Loro
+            await syncManager.initWithKey(syncKey);
             await syncManager.init();
 
             // Migrate existing data to Loro only if Loro doc is empty (first time)
@@ -678,17 +797,14 @@ const store = reactive({
                 }
             }
 
-            // Subscribe to sync updates - always reload from syncManager directly
+            // Subscribe to sync updates
             syncManager.subscribe(() => {
-                console.log('[App] Sync callback fired');
                 this.recipes = syncManager.getRecipes();
 
                 const weekplan = syncManager.getWeekplan();
-                console.log('[App] getWeekplan() returned:', weekplan ? weekplan.weekId : null);
                 const checked = syncManager.getShoppingListChecked();
 
                 if (weekplan) {
-                    // Force petite-vue to re-render by replacing with empty structure first
                     this.weekplan = { weekId: '', startDate: '', days: [], updatedAt: 0 };
                     setTimeout(() => {
                         this.weekplan = weekplan;
@@ -702,7 +818,12 @@ const store = reactive({
                 }
             });
 
-            // Update connection status via event callback (no polling)
+            // Handle decryption errors
+            syncManager.onDecryptError = () => {
+                this.syncDecryptError = true;
+            };
+
+            // Update connection status
             syncManager.onStatusChange = (connected) => {
                 this.syncConnected = connected;
             };
@@ -712,6 +833,7 @@ const store = reactive({
             syncManager.connect(this.syncServerUrl);
 
             this.syncEnabled = true;
+            this.syncState = 'active';
             localStorage.setItem('syncEnabled', 'true');
             window.syncManager = syncManager;
 
@@ -723,10 +845,11 @@ const store = reactive({
                 this.generateShoppingList();
             }
 
-            console.log('[App] Sync enabled');
+            console.log('[App] Sync enabled (encrypted)');
         } catch (err) {
             console.error('[App] Sync init failed:', err);
             await modal().alert('Sync konnte nicht aktiviert werden: ' + err.message);
+            this.syncState = 'none';
         }
         this.syncLoading = false;
     },
@@ -734,11 +857,16 @@ const store = reactive({
     disableSync() {
         if (window.syncManager) {
             window.syncManager.onStatusChange = null;
+            window.syncManager.onDecryptError = null;
             window.syncManager.disconnect();
             window.syncManager = null;
         }
         this.syncEnabled = false;
         this.syncConnected = false;
+        this.syncState = 'none';
+        this.syncKey = '';
+        this.syncDecryptError = false;
+        clearSyncKey();
         localStorage.removeItem('syncEnabled');
         console.log('[App] Sync disabled');
     },
@@ -776,9 +904,10 @@ createApp(store).mount('#app');
 // Export store globally
 window.appStore = store;
 
-// Auto-start sync if previously enabled (deferred to not block animations)
-if (localStorage.getItem('syncEnabled') === 'true') {
-    const startSync = () => store.enableSync();
+// Auto-start sync if previously enabled and key exists (deferred to not block animations)
+const savedSyncKey = loadSyncKey();
+if (localStorage.getItem('syncEnabled') === 'true' && savedSyncKey) {
+    const startSync = () => store._connectSync(savedSyncKey);
     if ('requestIdleCallback' in window) {
         requestIdleCallback(startSync);
     } else {

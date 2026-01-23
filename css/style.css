@@ -593,6 +593,69 @@ html {
         color: var(--pico-muted-color);
     }
 
+    .sync-error {
+        color: var(--pico-del-color);
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+    }
+
+    .sync-scanner {
+        .scanner-container {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto 1rem;
+            border-radius: var(--pico-border-radius);
+            overflow: hidden;
+
+            video {
+                width: 100%;
+                height: auto;
+                display: block;
+            }
+
+            .scanner-overlay {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 60%;
+                height: 60%;
+                transform: translate(-50%, -50%);
+                border: 2px solid var(--pico-primary);
+                border-radius: 8px;
+                pointer-events: none;
+            }
+        }
+    }
+
+    .sync-share {
+        text-align: center;
+
+        .qr-display {
+            margin-bottom: 1rem;
+
+            canvas {
+                border-radius: var(--pico-border-radius);
+                border: 1px solid var(--pico-muted-border-color);
+            }
+        }
+
+        .sync-key-display {
+            margin-bottom: 1rem;
+
+            .sync-key-text {
+                display: block;
+                padding: 0.75rem;
+                background: var(--pico-card-background-color);
+                border: 1px solid var(--pico-muted-border-color);
+                border-radius: var(--pico-border-radius);
+                font-size: 1rem;
+                word-break: break-all;
+                user-select: all;
+            }
+        }
+    }
+
     .input-group {
         margin-bottom: 1rem;
 

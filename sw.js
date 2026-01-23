@@ -3,7 +3,7 @@
  * Caching-Strategie für Offline-Fähigkeit
  */
 
-const CACHE_NAME = 'kochplaner-v4';
+const CACHE_NAME = 'kochplaner-v6';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -12,11 +12,16 @@ const STATIC_ASSETS = [
     './css/style.css',
     './js/app.js',
     './js/storage.js',
+    './js/crypto.js',
+    './js/qr.js',
+    './js/sync.js',
     './js/lib/idb.js',
     './js/lib/wrap-idb-value.js',
     './js/lib/petite-vue.es.js',
     './js/lib/utils.js',
     './js/lib/navigation.js',
+    './js/lib/qrcode.js',
+    './js/lib/jsqr.js',
     './js/components/drawer.js',
     './js/components/modal.js',
     './routes/welcome.html',

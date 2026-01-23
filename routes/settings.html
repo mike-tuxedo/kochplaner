@@ -17,28 +17,79 @@
 <article class="settings-section">
     <hgroup>
         <h4>Synchronisierung</h4>
-        <p>Synchronisiere deine Daten zwischen mehreren Geräten über einen Server.</p>
+        <p>Ende-zu-Ende verschlüsselte Synchronisierung zwischen mehreren Geräten.</p>
     </hgroup>
 
-    <div v-if="!syncEnabled">
+    <!-- State: Not configured -->
+    <div v-if="syncState === 'none'">
         <div class="input-group">
             <label for="sync-server">Server-Adresse</label>
-            <input type="text" id="sync-server" v-model="syncServerUrl" placeholder="ws://localhost:8080">
+            <input type="text" id="sync-server" v-model="syncServerUrl" placeholder="wss://kochplaner-server.mike.fm-media-staging.at">
         </div>
-        <button @click="enableSync()" :disabled="syncLoading">
-            <span v-if="syncLoading">Verbinde...</span>
-            <span v-else>Synchronisierung aktivieren</span>
-        </button>
+        <div class="settings-actions">
+            <button @click="startNewSync()" :disabled="syncLoading">
+                <span v-if="syncLoading">Verbinde...</span>
+                <span v-else>Neue Sync starten</span>
+            </button>
+            <button class="secondary outline" @click="showImportKey()">Schlüssel importieren</button>
+        </div>
     </div>
 
-    <div v-else>
+    <!-- State: Import key -->
+    <div v-if="syncState === 'importing'">
+        <div class="input-group">
+            <label for="sync-server-import">Server-Adresse</label>
+            <input type="text" id="sync-server-import" v-model="syncServerUrl" placeholder="wss://kochplaner-server.mike.fm-media-staging.at">
+        </div>
+        <div class="input-group">
+            <label for="sync-key-input">Sync-Schlüssel</label>
+            <input type="text" id="sync-key-input" v-model="syncKeyInput"
+                   placeholder="Schlüssel einfügen..." autocomplete="off">
+        </div>
+        <div class="settings-actions">
+            <button @click="importSyncKey()" :disabled="syncLoading || !syncKeyInput.trim()">
+                <span v-if="syncLoading">Verbinde...</span>
+                <span v-else>Verbinden</span>
+            </button>
+            <button class="secondary" @click="startQRScanner()">QR scannen</button>
+            <button class="secondary outline" @click="syncState = 'none'">Zurück</button>
+        </div>
+    </div>
+
+    <!-- State: QR Scanner -->
+    <div v-if="syncState === 'scanning'" class="sync-scanner">
+        <div class="scanner-container">
+            <video id="qr-video" muted playsinline></video>
+            <div class="scanner-overlay"></div>
+        </div>
+        <button class="secondary" @click="cancelQRScanner()">Abbrechen</button>
+    </div>
+
+    <!-- State: Active -->
+    <div v-if="syncState === 'active'">
         <p class="sync-status">
-            <span v-if="syncConnected" class="status-connected">● Verbunden</span>
+            <span v-if="syncConnected" class="status-connected">● Verbunden (verschlüsselt)</span>
             <span v-else class="status-disconnected">○ Nicht verbunden</span>
         </p>
+        <p v-if="syncDecryptError" class="sync-error">Entschlüsselung fehlgeschlagen — falscher Schlüssel?</p>
         <div class="settings-actions">
             <button class="secondary" @click="syncNow()" :disabled="!syncConnected">Jetzt synchronisieren</button>
+            <button class="secondary" @click="showShareKey()">Schlüssel teilen</button>
             <button class="secondary outline" @click="disableSync()">Sync deaktivieren</button>
+        </div>
+    </div>
+
+    <!-- State: Share key -->
+    <div v-if="syncState === 'sharing'" class="sync-share">
+        <div class="qr-display">
+            <canvas id="qr-canvas"></canvas>
+        </div>
+        <div class="sync-key-display">
+            <code class="sync-key-text">{{ syncKey }}</code>
+        </div>
+        <div class="settings-actions">
+            <button @click="shareSyncKey()">Teilen / Kopieren</button>
+            <button class="secondary outline" @click="backToSyncActive()">Zurück</button>
         </div>
     </div>
 </article>
