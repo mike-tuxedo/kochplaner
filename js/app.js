@@ -81,7 +81,7 @@ const store = reactive({
     syncEnabled: false,
     syncConnected: false,
     syncLoading: false,
-    syncServerUrl: localStorage.getItem('syncServerUrl') || 'ws://localhost:8080',
+    syncServerUrl: localStorage.getItem('syncServerUrl') || 'wss://kochplaner-server.mike.fm-media-staging.at',
     syncState: (loadSyncKey() && localStorage.getItem('syncEnabled') === 'true') ? 'active' : 'none',
     syncKey: loadSyncKey() || '',
     syncKeyInput: '',
