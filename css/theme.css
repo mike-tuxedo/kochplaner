@@ -46,7 +46,7 @@
     --pico-h3-color: #c2c7d0;
 
     /* Cards */
-    --pico-card-background-color: #181c25;
+    --pico-card-background-color: rgba(24, 28, 37, 0.6);
     --pico-card-border-color: var(--pico-card-background-color);
 
     /* Forms */

@@ -36,7 +36,7 @@
 </article>
 
 <!-- Wochenplan vorhanden -->
-<div v-if="weekplan" class="weekplan-grid">
+<div v-if="weekplan" :key="weekplan.weekId" class="weekplan-grid">
     <article v-for="(day, index) in weekplan.days" :key="day.dayName"
              class="day-slot mb-1" @click="openRecipeDrawer(index)">
         <div class="day-header">
@@ -45,15 +45,15 @@
                 <small>{{ formatDate(day.date) }}</small>
             </p>
             <h4 class="recipe-name" v-if="getRecipeById(day.recipeId)">
-                {{ getRecipeById(day.recipeId).name }}
+                {{ getRecipeById(day.recipeId)?.name }}
             </h4>
             <p v-else><em>Kein Rezept</em></p>
         </div>
-        
+
         <details class="mb-0" v-if="getRecipeById(day.recipeId)" @click.stop>
             <summary>Zutaten</summary>
             <ul>
-                <li v-for="ing in getRecipeById(day.recipeId).ingredients">
+                <li v-for="ing in getRecipeById(day.recipeId)?.ingredients || []">
                     {{ ing.amount }} {{ ing.unit }} {{ ing.name }}
                 </li>
             </ul>

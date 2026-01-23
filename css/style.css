@@ -581,6 +581,32 @@ html {
         }
     }
 
+    .sync-status {
+        margin-bottom: 1rem;
+    }
+
+    .status-connected {
+        color: var(--pico-ins-color);
+    }
+
+    .status-disconnected {
+        color: var(--pico-muted-color);
+    }
+
+    .input-group {
+        margin-bottom: 1rem;
+
+        label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        input {
+            margin-bottom: 0;
+        }
+    }
+
     /* ==========================================
        Welcome Page
        ========================================== */

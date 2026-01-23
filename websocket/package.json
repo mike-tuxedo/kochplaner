@@ -1,0 +1,14 @@
+{
+  "name": "kochplaner-sync-server",
+  "version": "1.0.0",
+  "description": "WebSocket sync server for Kochplaner using Loro CRDT",
+  "main": "websocket-server.js",
+  "scripts": {
+    "start": "node websocket-server.js"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.7",
+    "ws": "^8.16.0",
+    "uuid": "^9.0.1"
+  }
+}

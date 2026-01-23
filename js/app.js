@@ -75,6 +75,12 @@ const store = reactive({
     isIOSDevice: isIOS,
     canInstall: !isStandaloneMode,
 
+    // Sync state
+    syncEnabled: false,
+    syncConnected: false,
+    syncLoading: false,
+    syncServerUrl: localStorage.getItem('syncServerUrl') || 'ws://localhost:8080',
+
     // Data
     recipes: [],
     weekplan: null,
@@ -144,6 +150,12 @@ const store = reactive({
         // Convert reactive proxy to plain object for IndexedDB
         const recipeData = JSON.parse(JSON.stringify(this.editingRecipe));
         await saveRecipe(recipeData);
+
+        // Sync if enabled
+        if (window.syncManager?.isInitialized) {
+            window.syncManager.saveRecipe(recipeData);
+        }
+
         await this.loadRecipes();
         $id('recipeEditDrawer')?.close();
     },
@@ -151,12 +163,23 @@ const store = reactive({
     async deleteRecipe(id) {
         if (await modal().confirm('Rezept wirklich löschen?')) {
             await deleteRecipeFromDB(id);
+
+            // Sync if enabled
+            if (window.syncManager?.isInitialized) {
+                window.syncManager.deleteRecipe(id);
+            }
+
             await this.loadRecipes();
         }
     },
 
     async loadRecipes() {
-        this.recipes = await getAllRecipes();
+        // When sync is enabled, load from sync manager to stay consistent
+        if (window.syncManager?.isInitialized) {
+            this.recipes = window.syncManager.getRecipes();
+        } else {
+            this.recipes = await getAllRecipes();
+        }
     },
 
     async exportRecipes() {
@@ -438,7 +461,13 @@ const store = reactive({
         // Convert reactive proxy to plain object for IndexedDB
         const recipe = JSON.parse(JSON.stringify(this.suggestedRecipe));
         recipe.id = null;
-        await saveRecipe(recipe);
+        const savedRecipe = await saveRecipe(recipe);
+
+        // Sync if enabled
+        if (window.syncManager?.isInitialized) {
+            window.syncManager.saveRecipe(savedRecipe);
+        }
+
         await this.loadRecipes();
         $id('suggestionDrawer')?.close();
         await modal().alert('Rezept wurde zu deiner Sammlung hinzugefügt!');
@@ -506,6 +535,11 @@ const store = reactive({
         await setSetting('currentWeekId', weekplan.weekId);
         this.weekplan = weekplan;
         this.generateShoppingList();
+
+        // Sync if enabled
+        if (window.syncManager?.isInitialized) {
+            window.syncManager.saveWeekplan(weekplan);
+        }
     },
 
     openRecipeDrawer(dayIndex) {
@@ -521,6 +555,11 @@ const store = reactive({
         const weekplanData = JSON.parse(JSON.stringify(this.weekplan));
         await saveWeekplan(weekplanData);
         this.generateShoppingList();
+
+        // Sync if enabled
+        if (window.syncManager?.isInitialized) {
+            window.syncManager.saveWeekplan(weekplanData);
+        }
 
         $id('recipeSelectDrawer')?.close();
         this.selectedDayIndex = null;
@@ -555,6 +594,17 @@ const store = reactive({
         }
 
         this.shoppingList = Array.from(ingredientsMap.values());
+    },
+
+    syncShoppingList() {
+        // Sync shopping list checked state if enabled
+        if (window.syncManager?.isInitialized) {
+            const checkedItems = {};
+            for (const item of this.shoppingList) {
+                checkedItems[item.name] = item.checked;
+            }
+            window.syncManager.saveShoppingListChecked(checkedItems);
+        }
     },
 
     async shareShoppingList() {
@@ -601,6 +651,110 @@ const store = reactive({
         this.bubblesEnabled = !this.bubblesEnabled;
         document.body.classList.toggle('bubbles-disabled', !this.bubblesEnabled);
         localStorage.setItem('bubblesEnabled', this.bubblesEnabled);
+    },
+
+    // === SYNC ===
+    async enableSync() {
+        if (this.syncLoading) return;
+
+        this.syncLoading = true;
+        try {
+            // Dynamically import sync module
+            const { syncManager } = await import('./sync.js');
+
+            // Initialize Loro
+            await syncManager.init();
+
+            // Migrate existing data to Loro only if Loro doc is empty (first time)
+            const loroRecipes = syncManager.getRecipes();
+            if (loroRecipes.length === 0) {
+                const existingRecipes = await getAllRecipes();
+                for (const recipe of existingRecipes) {
+                    syncManager.saveRecipe(recipe);
+                }
+
+                if (this.weekplan) {
+                    syncManager.saveWeekplan(JSON.parse(JSON.stringify(this.weekplan)));
+                }
+            }
+
+            // Subscribe to sync updates - always reload from syncManager directly
+            syncManager.subscribe(() => {
+                console.log('[App] Sync callback fired');
+                this.recipes = syncManager.getRecipes();
+
+                const weekplan = syncManager.getWeekplan();
+                console.log('[App] getWeekplan() returned:', weekplan ? weekplan.weekId : null);
+                const checked = syncManager.getShoppingListChecked();
+
+                if (weekplan) {
+                    // Force petite-vue to re-render by replacing with empty structure first
+                    this.weekplan = { weekId: '', startDate: '', days: [], updatedAt: 0 };
+                    setTimeout(() => {
+                        this.weekplan = weekplan;
+                        this.generateShoppingList();
+                        if (Object.keys(checked).length > 0) {
+                            this._applyShoppingListChecked(checked);
+                        }
+                    }, 0);
+                } else if (Object.keys(checked).length > 0) {
+                    this._applyShoppingListChecked(checked);
+                }
+            });
+
+            // Update connection status via event callback (no polling)
+            syncManager.onStatusChange = (connected) => {
+                this.syncConnected = connected;
+            };
+
+            // Connect to server
+            localStorage.setItem('syncServerUrl', this.syncServerUrl);
+            syncManager.connect(this.syncServerUrl);
+
+            this.syncEnabled = true;
+            localStorage.setItem('syncEnabled', 'true');
+            window.syncManager = syncManager;
+
+            // Load recipes from sync
+            this.recipes = syncManager.getRecipes();
+            const syncedWeekplan = syncManager.getWeekplan();
+            if (syncedWeekplan) {
+                this.weekplan = syncedWeekplan;
+                this.generateShoppingList();
+            }
+
+            console.log('[App] Sync enabled');
+        } catch (err) {
+            console.error('[App] Sync init failed:', err);
+            await modal().alert('Sync konnte nicht aktiviert werden: ' + err.message);
+        }
+        this.syncLoading = false;
+    },
+
+    disableSync() {
+        if (window.syncManager) {
+            window.syncManager.onStatusChange = null;
+            window.syncManager.disconnect();
+            window.syncManager = null;
+        }
+        this.syncEnabled = false;
+        this.syncConnected = false;
+        localStorage.removeItem('syncEnabled');
+        console.log('[App] Sync disabled');
+    },
+
+    syncNow() {
+        if (window.syncManager) {
+            window.syncManager.syncNow();
+        }
+    },
+
+    _applyShoppingListChecked(checkedItems) {
+        for (const item of this.shoppingList) {
+            if (checkedItems[item.name] !== undefined) {
+                item.checked = checkedItems[item.name];
+            }
+        }
     }
 });
 
@@ -621,6 +775,16 @@ createApp(store).mount('#app');
 
 // Export store globally
 window.appStore = store;
+
+// Auto-start sync if previously enabled (deferred to not block animations)
+if (localStorage.getItem('syncEnabled') === 'true') {
+    const startSync = () => store.enableSync();
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(startSync);
+    } else {
+        setTimeout(startSync, 1000);
+    }
+}
 
 // Navigation function
 window.navigateTo = function (page) {

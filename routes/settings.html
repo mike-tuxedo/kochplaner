@@ -16,6 +16,35 @@
 
 <article class="settings-section">
     <hgroup>
+        <h4>Synchronisierung</h4>
+        <p>Synchronisiere deine Daten zwischen mehreren Geräten über einen Server.</p>
+    </hgroup>
+
+    <div v-if="!syncEnabled">
+        <div class="input-group">
+            <label for="sync-server">Server-Adresse</label>
+            <input type="text" id="sync-server" v-model="syncServerUrl" placeholder="ws://localhost:8080">
+        </div>
+        <button @click="enableSync()" :disabled="syncLoading">
+            <span v-if="syncLoading">Verbinde...</span>
+            <span v-else>Synchronisierung aktivieren</span>
+        </button>
+    </div>
+
+    <div v-else>
+        <p class="sync-status">
+            <span v-if="syncConnected" class="status-connected">● Verbunden</span>
+            <span v-else class="status-disconnected">○ Nicht verbunden</span>
+        </p>
+        <div class="settings-actions">
+            <button class="secondary" @click="syncNow()" :disabled="!syncConnected">Jetzt synchronisieren</button>
+            <button class="secondary outline" @click="disableSync()">Sync deaktivieren</button>
+        </div>
+    </div>
+</article>
+
+<article class="settings-section">
+    <hgroup>
         <h4>Rezepte verwalten</h4>
         <p>Hier kannst du Backups erstellen und wiederherstellen. Beim Import werden keine bestehenden Rezepte gelöscht, sondern nur neue hinzugefügt.</p>
     </hgroup>

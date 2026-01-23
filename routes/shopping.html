@@ -16,7 +16,7 @@
         <div v-for="(item, index) in shoppingList" :key="index"
              class="item" :class="{ checked: item.checked }">
             <input type="checkbox" :id="'item-' + index"
-                   v-model="item.checked">
+                   v-model="item.checked" @change="syncShoppingList()">
             <label :for="'item-' + index" class="ingredient-info">
                 <div>{{ item.name }}</div>
                 <div class="amount">{{ item.amount }} {{ item.unit }}</div>
