@@ -17,43 +17,45 @@
 <article class="settings-section">
     <hgroup>
         <h4>Synchronisierung</h4>
-        <p>Ende-zu-Ende verschlüsselte Synchronisierung zwischen mehreren Geräten.</p>
+        <p>Verschlüsselte Synchronisierung zwischen Geräten.</p>
     </hgroup>
 
     <!-- State: Not configured -->
-    <div v-if="syncState === 'none'">
-        <div class="input-group">
+    <div v-if="syncState === 'none'" class="sync-setup">
+        <button @click="startNewSync()" :disabled="syncLoading">
+            <span v-if="syncLoading">Verbinde...</span>
+            <span v-else>Neuen Sync starten</span>
+        </button>
+        <button class="secondary outline" @click="showImportKey()" :disabled="syncLoading">Mit bestehendem Gerät verbinden</button>
+        <details class="mt-1">
+            <summary>Erweiterte Einstellungen</summary>
             <label for="sync-server">Server-Adresse</label>
-            <input type="text" id="sync-server" v-model="syncServerUrl" placeholder="wss://kochplaner-server.mike.fm-media-staging.at">
-        </div>
-        <div class="settings-actions">
-            <button @click="startNewSync()" :disabled="syncLoading">
-                <span v-if="syncLoading">Verbinde...</span>
-                <span v-else>Neue Sync starten</span>
-            </button>
-            <button class="secondary outline" @click="showImportKey()">Schlüssel importieren</button>
-        </div>
+            <input type="text" id="sync-server" v-model="syncServerUrl" placeholder="wss://...">
+        </details>
     </div>
 
     <!-- State: Import key -->
-    <div v-if="syncState === 'importing'">
-        <div class="input-group">
-            <label for="sync-server-import">Server-Adresse</label>
-            <input type="text" id="sync-server-import" v-model="syncServerUrl" placeholder="wss://kochplaner-server.mike.fm-media-staging.at">
-        </div>
-        <div class="input-group">
-            <label for="sync-key-input">Sync-Schlüssel</label>
-            <input type="text" id="sync-key-input" v-model="syncKeyInput"
-                   placeholder="Schlüssel einfügen..." autocomplete="off">
-        </div>
+    <div v-if="syncState === 'importing'" class="sync-import">
+        <p>Scanne den QR-Code vom anderen Gerät oder gib den Schlüssel manuell ein.</p>
         <div class="settings-actions">
-            <button @click="importSyncKey()" :disabled="syncLoading || !syncKeyInput.trim()">
-                <span v-if="syncLoading">Verbinde...</span>
-                <span v-else>Verbinden</span>
-            </button>
-            <button class="secondary" @click="startQRScanner()">QR scannen</button>
-            <button class="secondary outline" @click="syncState = 'none'">Zurück</button>
+            <button @click="startQRScanner()" :disabled="syncLoading">QR-Code scannen</button>
         </div>
+        <details class="mt-1" open>
+            <summary>Schlüssel manuell eingeben</summary>
+            <input type="text" v-model="syncKeyInput" placeholder="Schlüssel einfügen..." autocomplete="off">
+            <div class="settings-actions">
+                <button class="secondary" @click="importSyncKey()" :disabled="syncLoading || !syncKeyInput.trim()">
+                    <span v-if="syncLoading">Verbinde...</span>
+                    <span v-else>Verbinden</span>
+                </button>
+            </div>
+        </details>
+        <details class="mt-1">
+            <summary>Erweiterte Einstellungen</summary>
+            <label for="sync-server-import">Server-Adresse</label>
+            <input type="text" id="sync-server-import" v-model="syncServerUrl" placeholder="wss://...">
+        </details>
+        <button class="secondary outline mt-1" @click="syncState = 'none'">Zurück</button>
     </div>
 
     <!-- State: QR Scanner -->
@@ -62,25 +64,25 @@
             <video id="qr-video" muted playsinline></video>
             <div class="scanner-overlay"></div>
         </div>
-        <button class="secondary" @click="cancelQRScanner()">Abbrechen</button>
+        <button class="secondary outline" @click="cancelQRScanner()">Abbrechen</button>
     </div>
 
     <!-- State: Active -->
-    <div v-if="syncState === 'active'">
+    <div v-if="syncState === 'active'" class="sync-active">
         <p class="sync-status">
-            <span v-if="syncConnected" class="status-connected">● Verbunden (verschlüsselt)</span>
+            <span v-if="syncConnected" class="status-connected">● Verbunden</span>
             <span v-else class="status-disconnected">○ Nicht verbunden</span>
         </p>
         <p v-if="syncDecryptError" class="sync-error">Entschlüsselung fehlgeschlagen — falscher Schlüssel?</p>
         <div class="settings-actions">
-            <button class="secondary" @click="syncNow()" :disabled="!syncConnected">Jetzt synchronisieren</button>
-            <button class="secondary" @click="showShareKey()">Schlüssel teilen</button>
+            <button @click="showShareKey()">Weiteres Gerät verbinden</button>
             <button class="secondary outline" @click="disableSync()">Sync deaktivieren</button>
         </div>
     </div>
 
     <!-- State: Share key -->
     <div v-if="syncState === 'sharing'" class="sync-share">
+        <p>Scanne diesen QR-Code auf dem anderen Gerät unter <em>„Mit bestehendem Gerät verbinden"</em>.</p>
         <div class="qr-display">
             <canvas id="qr-canvas"></canvas>
         </div>
@@ -88,7 +90,7 @@
             <code class="sync-key-text">{{ syncKey }}</code>
         </div>
         <div class="settings-actions">
-            <button @click="shareSyncKey()">Teilen / Kopieren</button>
+            <button @click="shareSyncKey()">Kopieren / Teilen</button>
             <button class="secondary outline" @click="backToSyncActive()">Zurück</button>
         </div>
     </div>
@@ -97,7 +99,7 @@
 <article class="settings-section">
     <hgroup>
         <h4>Rezepte verwalten</h4>
-        <p>Hier kannst du Backups erstellen und wiederherstellen. Beim Import werden keine bestehenden Rezepte gelöscht, sondern nur neue hinzugefügt.</p>
+        <p>Backups erstellen und wiederherstellen. Beim Import werden nur neue Rezepte hinzugefügt.</p>
     </hgroup>
     <div class="settings-actions">
         <button class="secondary" @click="exportRecipes()">Exportieren</button>
@@ -110,8 +112,8 @@
 
 <article class="settings-section">
     <hgroup>
-        <h4>Vorderinierte Rezepte</h4>
-        <p>Hier kannst eine von uns getroffene Vorauswahl an Rezepten importieren. Beim Import werden keine bestehenden Rezepte gelöscht, sondern nur neue hinzugefügt.</p>
+        <h4>Vordefinierte Rezepte</h4>
+        <p>Eine Vorauswahl an Rezepten importieren. Bestehende Rezepte bleiben erhalten.</p>
     </hgroup>
     <button class="secondary" @click="loadDefaultRecipes()">Standardrezepte laden</button>
 </article>
@@ -119,7 +121,7 @@
 <article class="settings-section" v-if="canInstall">
     <hgroup>
         <h4>App installieren</h4>
-        <p>Installiere die App auf deinem Gerät für schnelleren Zugriff und Offline-Nutzung.</p>
+        <p>Installiere die App für schnelleren Zugriff und Offline-Nutzung.</p>
     </hgroup>
     <button @click="window.installApp()">App installieren</button>
 </article>
@@ -134,6 +136,6 @@
 
 <article class="settings-section">
     <h4>Über die App</h4>
-    <p>Kochplaner - Dein persönlicher Wochenplaner für Mahlzeiten</p>
-    <small>Version 1.0 | Offline-fähig</small>
+    <p>Kochplaner - Dein persönlicher Wochenplaner</p>
+    <small>Version 1.5 | Offline-fähig | E2E-verschlüsselt</small>
 </article>

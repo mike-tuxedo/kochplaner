@@ -680,6 +680,23 @@ html {
         }
     }
 
+    .sync-setup {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+
+        button {
+            width: 100%;
+        }
+    }
+
+    .sync-import {
+        p {
+            color: var(--pico-muted-color);
+            margin-bottom: 1rem;
+        }
+    }
+
     .sync-status {
         margin-bottom: 1rem;
     }

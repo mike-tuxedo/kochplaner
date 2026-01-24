@@ -541,7 +541,8 @@ const store = reactive({
         const weekplan = {
             weekId: generateUUID(),
             startDate: monday.toISOString(),
-            days
+            days,
+            updatedAt: Date.now()
         };
 
         await saveWeekplan(weekplan);
@@ -564,6 +565,7 @@ const store = reactive({
         if (this.selectedDayIndex === null || !this.weekplan) return;
 
         this.weekplan.days[this.selectedDayIndex].recipeId = recipeId;
+        this.weekplan.updatedAt = Date.now();
         // Convert reactive proxy to plain object for IndexedDB
         const weekplanData = JSON.parse(JSON.stringify(this.weekplan));
         await saveWeekplan(weekplanData);
@@ -886,7 +888,7 @@ const store = reactive({
         }
         this.syncKey = key;
         storeSyncKey(key);
-        await this._connectSync(key);
+        await this._connectSync(key, true);
     },
 
     /**
@@ -903,7 +905,7 @@ const store = reactive({
                     this.syncKey = key;
                     this.syncKeyInput = key;
                     storeSyncKey(key);
-                    await this._connectSync(key);
+                    await this._connectSync(key, true);
                 } else {
                     await modal().alert('Ungültiger QR-Code. Bitte versuche es erneut.');
                     this.syncState = 'importing';
@@ -972,7 +974,7 @@ const store = reactive({
     /**
      * Internal: connect to sync server with a key
      */
-    async _connectSync(syncKey) {
+    async _connectSync(syncKey, isJoining = false) {
         if (this.syncLoading) return;
         this.syncLoading = true;
         this.syncDecryptError = false;
@@ -986,7 +988,18 @@ const store = reactive({
 
             // Migrate existing data to Loro only if Loro doc is empty (first time)
             const loroRecipes = syncManager.getRecipes();
-            if (loroRecipes.length === 0) {
+            const hasLocalData = this.recipes.length > 0 || this.weekplan;
+
+            if (loroRecipes.length === 0 && hasLocalData) {
+                if (isJoining) {
+                    // Joining existing sync with local data - inform user about merge
+                    await modal().alert(
+                        'Daten werden zusammengeführt',
+                        'Deine lokalen Rezepte werden mit dem anderen Gerät zusammengeführt. ' +
+                        'Für den Wochenplan wird der jeweils neueste verwendet.'
+                    );
+                }
+
                 const existingRecipes = await getAllRecipes();
                 for (const recipe of existingRecipes) {
                     syncManager.saveRecipe(recipe);
@@ -996,6 +1009,9 @@ const store = reactive({
                     syncManager.saveWeekplan(JSON.parse(JSON.stringify(this.weekplan)));
                 }
             }
+
+            // Track local weekplan timestamp for conflict resolution
+            const localWeekplanUpdatedAt = this.weekplan?.updatedAt || 0;
 
             // Subscribe to sync updates
             syncManager.subscribe(() => {
@@ -1037,11 +1053,17 @@ const store = reactive({
             localStorage.setItem('syncEnabled', 'true');
             window.syncManager = syncManager;
 
-            // Load recipes from sync
+            // Load recipes from sync (merged set)
             this.recipes = syncManager.getRecipes();
             const syncedWeekplan = syncManager.getWeekplan();
             if (syncedWeekplan) {
-                this.weekplan = syncedWeekplan;
+                // Use the weekplan with the later updatedAt timestamp
+                if (!this.weekplan || (syncedWeekplan.updatedAt || 0) >= localWeekplanUpdatedAt) {
+                    this.weekplan = syncedWeekplan;
+                } else {
+                    // Local is newer, re-save it to ensure it propagates
+                    syncManager.saveWeekplan(JSON.parse(JSON.stringify(this.weekplan)));
+                }
                 await this.generateShoppingList();
             }
 
