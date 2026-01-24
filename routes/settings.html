@@ -104,9 +104,12 @@
     <div v-if="!speechEnabled">
         <p class="speech-info">Beim Aktivieren wird einmalig ein deutsches Sprachmodell (~45 MB) heruntergeladen. Danach funktioniert die Erkennung vollständig offline.</p>
         <button @click="enableSpeech()" :disabled="speechLoading">
-            <span v-if="speechLoading">Lade Modell...</span>
+            <span v-if="speechLoading && speechProgress > 0 && speechProgress < 100">Lade Modell... {{ speechProgress }}%</span>
+            <span v-else-if="speechLoading && speechProgress >= 100">Initialisiere...</span>
+            <span v-else-if="speechLoading">Verbinde...</span>
             <span v-else>Spracheingabe aktivieren</span>
         </button>
+        <progress v-if="speechLoading && speechProgress > 0 && speechProgress < 100" :value="speechProgress" max="100"></progress>
     </div>
     <div v-else>
         <p class="status-connected">Spracheingabe aktiv</p>

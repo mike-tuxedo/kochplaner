@@ -11,6 +11,7 @@ import {
     deleteRecipe as deleteRecipeFromDB,
     getWeekplan,
     saveWeekplan,
+    deleteWeekplan,
     getSetting,
     setSetting,
     exportRecipes as exportRecipesToFile,
@@ -88,6 +89,7 @@ const store = reactive({
     // Speech recognition
     speechEnabled: localStorage.getItem('speechEnabled') === 'true',
     speechLoading: false,
+    speechProgress: 0,
     speechListening: false,
     speechPartial: '',
     speechTarget: null, // 'shopping' | 'recipeName' | 'ingredient'
@@ -97,6 +99,7 @@ const store = reactive({
     weekplan: null,
     shoppingList: [],
     customShoppingItems: [],
+    shoppingEditMode: false,
     newShoppingItem: '',
     editingShoppingIndex: -1,
     editingShoppingText: '',
@@ -218,7 +221,24 @@ const store = reactive({
         }
 
         try {
-            const count = await importRecipesFromFile(file);
+            let count;
+            if (window.syncManager?.isInitialized) {
+                // When sync is active, save to syncManager
+                const text = await file.text();
+                const recipes = JSON.parse(text);
+                if (!Array.isArray(recipes)) throw new Error('Ungültiges Format');
+                count = 0;
+                for (const recipe of recipes) {
+                    if (recipe.name && Array.isArray(recipe.ingredients)) {
+                        recipe.id = generateUUID();
+                        recipe.createdAt = Date.now();
+                        window.syncManager.saveRecipe(recipe);
+                        count++;
+                    }
+                }
+            } else {
+                count = await importRecipesFromFile(file);
+            }
             await modal().alert(`${count} Rezept(e) erfolgreich importiert!`);
             await this.loadRecipes();
         } catch (err) {
@@ -235,8 +255,26 @@ const store = reactive({
         if (!confirmed) return;
 
         try {
-            const count = await loadDefaultRecipesFromDB();
-            await modal().alert(`${count} Standardrezept(e) erfolgreich geladen!`);
+            if (window.syncManager?.isInitialized) {
+                // When sync is active, save to syncManager
+                const response = await fetch('rezepte-export.json');
+                if (!response.ok) throw new Error('Datei nicht gefunden');
+                const recipes = await response.json();
+                if (!Array.isArray(recipes)) throw new Error('Ungültiges Format');
+                let imported = 0;
+                for (const recipe of recipes) {
+                    if (recipe.name && Array.isArray(recipe.ingredients)) {
+                        recipe.id = generateUUID();
+                        recipe.createdAt = Date.now();
+                        window.syncManager.saveRecipe(recipe);
+                        imported++;
+                    }
+                }
+                await modal().alert(`${imported} Standardrezept(e) erfolgreich geladen!`);
+            } else {
+                const count = await loadDefaultRecipesFromDB();
+                await modal().alert(`${count} Standardrezept(e) erfolgreich geladen!`);
+            }
             await this.loadRecipes();
         } catch (err) {
             await modal().alert('Fehler: ' + err.message);
@@ -251,15 +289,34 @@ const store = reactive({
         if (!confirmed) return;
 
         try {
-            // Delete all recipes
-            for (const recipe of this.recipes) {
+            // Disable sync if active
+            if (window.syncManager?.isInitialized) {
+                this.disableSync();
+            }
+
+            // Delete all recipes from IndexedDB
+            for (const recipe of (await getAllRecipes())) {
                 await deleteRecipeFromDB(recipe.id);
             }
-            // Clear weekplan
-            this.weekplan = null;
+
+            // Clear weekplan from IndexedDB
+            const weekId = await getSetting('currentWeekId');
+            if (weekId) {
+                await deleteWeekplan(weekId);
+            }
             await setSetting('currentWeekId', null);
-            // Reload
-            await this.loadRecipes();
+            await setSetting('customShoppingItems', []);
+            await setSetting('shoppingListOrder', []);
+
+            // Delete Loro sync database
+            indexedDB.deleteDatabase('kochplaner-loro');
+
+            // Reset UI state
+            this.recipes = [];
+            this.weekplan = null;
+            this.shoppingList = [];
+            this.customShoppingItems = [];
+
             await this.generateShoppingList();
             await modal().alert('Alle Daten wurden gelöscht.');
         } catch (err) {
@@ -676,10 +733,11 @@ const store = reactive({
 
     startEditItem(index) {
         const item = this.shoppingList[index];
-        this.editingShoppingIndex = index;
+        // Set values before index to avoid blank flash on template switch
         this.editingShoppingText = item.name;
         this.editingShoppingAmount = item.amount || '';
         this.editingShoppingUnit = item.unit || '';
+        this.editingShoppingIndex = index;
     },
 
     cancelEditItem() {
@@ -1107,10 +1165,13 @@ const store = reactive({
     async enableSpeech() {
         if (this.speechLoading) return;
         this.speechLoading = true;
+        this.speechProgress = 0;
 
         try {
             const { initSpeechModel } = await import('./speech.js');
-            await initSpeechModel();
+            await initSpeechModel((progress) => {
+                this.speechProgress = Math.round(progress * 100);
+            });
             this.speechEnabled = true;
             localStorage.setItem('speechEnabled', 'true');
         } catch (err) {
@@ -1118,6 +1179,7 @@ const store = reactive({
             await modal().alert('Spracherkennung konnte nicht aktiviert werden: ' + err.message);
         }
         this.speechLoading = false;
+        this.speechProgress = 0;
     },
 
     disableSpeech() {

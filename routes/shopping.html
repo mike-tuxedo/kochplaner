@@ -1,6 +1,11 @@
 <div class="page-header">
     <h2>Einkaufsliste</h2>
-    <button :class="{ outline: theme === 'dark' }" v-if="shoppingList.length > 0" @click="shareShoppingList()">Einkaufsliste Teilen</button>
+    <div class="page-header-actions" v-if="shoppingList.length > 0">
+        <button class="secondary" :class="{ outline: !shoppingEditMode }" @click="shoppingEditMode = !shoppingEditMode">
+            {{ shoppingEditMode ? 'Fertig' : 'Bearbeiten' }}
+        </button>
+        <button :class="{ outline: theme === 'dark' }" @click="shareShoppingList()">Teilen</button>
+    </div>
 </div>
 
 <!-- Keine Einkaufsliste -->
@@ -10,8 +15,8 @@
     <button class="mt-1" :class="{ outline: theme === 'dark' }" @click="navigateTo(1)">Zum Wochenplan</button>
 </div>
 
-<!-- Eintrag hinzufügen -->
-<div class="shopping-add">
+<!-- Eintrag hinzufügen (nur im Edit-Mode) -->
+<div v-if="shoppingEditMode" class="shopping-add">
     <form @submit.prevent="addShoppingItem()" role="group">
         <input type="text" v-model="newShoppingItem" placeholder="Eintrag hinzufügen...">
         <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'shopping' }" @click="toggleSpeechListening('shopping')" title="Spracheingabe">&#x1F3A4;</button>
@@ -26,24 +31,24 @@
         <div v-for="(item, index) in shoppingList" :key="index"
              class="item" :class="{ checked: item.checked, dragging: dragIndex === index }"
              :data-index="index"
-             draggable="true"
-             @dragstart="onDragStart(index, $event)"
-             @dragover="onDragOver(index, $event)"
-             @dragend="onDragEnd($event)"
-             @touchstart="onTouchStart(index, $event)"
-             @touchmove="onTouchMove($event)"
-             @touchend="onTouchEnd()">
+             :draggable="shoppingEditMode"
+             @dragstart="shoppingEditMode && onDragStart(index, $event)"
+             @dragover="shoppingEditMode && onDragOver(index, $event)"
+             @dragend="shoppingEditMode && onDragEnd($event)"
+             @touchstart="shoppingEditMode && onTouchStart(index, $event)"
+             @touchmove="shoppingEditMode && onTouchMove($event)"
+             @touchend="shoppingEditMode && onTouchEnd()">
 
             <!-- Normal view -->
             <template v-if="editingShoppingIndex !== index">
-                <span class="drag-handle">&#x2630;</span>
+                <span v-if="shoppingEditMode" class="drag-handle">&#x2630;</span>
                 <input type="checkbox" :id="'item-' + index"
                        v-model="item.checked" @change="syncShoppingList(item)">
-                <label :for="'item-' + index" class="ingredient-info" @dblclick="startEditItem(index)">
+                <label :for="'item-' + index" class="ingredient-info" @dblclick="shoppingEditMode && startEditItem(index)">
                     <div>{{ item.name }}</div>
                     <div class="amount" v-if="item.amount || item.unit">{{ item.amount }} {{ item.unit }}</div>
                 </label>
-                <div class="item-actions">
+                <div v-if="shoppingEditMode" class="item-actions">
                     <button class="btn-icon" @click="startEditItem(index)" title="Bearbeiten">&#x270E;</button>
                     <button class="btn-icon btn-delete" @click="removeShoppingItem(index)" title="Löschen">&times;</button>
                 </div>
