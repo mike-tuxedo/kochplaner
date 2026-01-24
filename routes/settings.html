@@ -98,6 +98,24 @@
 
 <article class="settings-section">
     <hgroup>
+        <h4>Spracheingabe</h4>
+        <p>Offline-Spracherkennung für Rezepte und Einkaufsliste.</p>
+    </hgroup>
+    <div v-if="!speechEnabled">
+        <p class="speech-info">Beim Aktivieren wird einmalig ein deutsches Sprachmodell (~45 MB) heruntergeladen. Danach funktioniert die Erkennung vollständig offline.</p>
+        <button @click="enableSpeech()" :disabled="speechLoading">
+            <span v-if="speechLoading">Lade Modell...</span>
+            <span v-else>Spracheingabe aktivieren</span>
+        </button>
+    </div>
+    <div v-else>
+        <p class="status-connected">Spracheingabe aktiv</p>
+        <button class="secondary outline" @click="disableSpeech()">Deaktivieren</button>
+    </div>
+</article>
+
+<article class="settings-section">
+    <hgroup>
         <h4>Rezepte verwalten</h4>
         <p>Backups erstellen und wiederherstellen. Beim Import werden nur neue Rezepte hinzugefügt.</p>
     </hgroup>

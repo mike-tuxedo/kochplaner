@@ -1197,6 +1197,57 @@ html {
 }
 
     /* ==========================================
+       Speech Recognition
+       ========================================== */
+    .mic-btn {
+        width: 50px;
+        padding: 0.5rem;
+        font-size: 1.1rem;
+        transition: background 0.2s;
+
+        &.active {
+            background: var(--pico-del-color);
+            border-color: var(--pico-del-color);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    }
+
+    .speech-partial {
+        font-size: 0.85rem;
+        color: var(--pico-muted-color);
+        font-style: italic;
+        padding: 0.25rem 0.5rem;
+        margin-top: -0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .speech-info {
+        color: var(--pico-muted-color);
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .add-ingredient-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+
+        .add-ingredient-btn {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .mic-btn {
+            margin-bottom: 0;
+        }
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+
+    /* ==========================================
     Helper Classes
 ========================================== */
     .hide {

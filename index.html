@@ -98,8 +98,12 @@
         <div v-if="editingRecipe" class="recipe-form">
             <label>
                 Rezeptname
-                <input type="text" v-model="editingRecipe.name" placeholder="z.B. Spaghetti Bolognese">
+                <div role="group">
+                    <input type="text" v-model="editingRecipe.name" placeholder="z.B. Spaghetti Bolognese">
+                    <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'recipeName' }" @click="toggleSpeechListening('recipeName')" title="Spracheingabe">&#x1F3A4;</button>
+                </div>
             </label>
+            <div v-if="speechListening && speechTarget === 'recipeName' && speechPartial" class="speech-partial">{{ speechPartial }}</div>
 
             <label>
                 Zubereitung <small>(optional)</small>
@@ -137,8 +141,12 @@
                         :class="{ outline: theme === 'dark' }" @click="removeIngredient(idx)">−</button>
                 </div>
             </div>
-            <button type="button" class="secondary add-ingredient-btn" :class="{ outline: theme === 'dark' }"
-                @click="addIngredient()">+ Zutat</button>
+            <div class="add-ingredient-actions">
+                <button type="button" class="secondary add-ingredient-btn" :class="{ outline: theme === 'dark' }"
+                    @click="addIngredient()">+ Zutat</button>
+                <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'ingredient' }" @click="toggleSpeechListening('ingredient')" title="Zutat einsprechen">&#x1F3A4;</button>
+            </div>
+            <div v-if="speechListening && speechTarget === 'ingredient' && speechPartial" class="speech-partial">{{ speechPartial }}</div>
 
             <div class="form-actions">
                 <button type="button" class="secondary" @click="cancelEdit()">Abbrechen</button>

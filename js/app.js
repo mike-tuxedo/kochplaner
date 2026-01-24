@@ -87,6 +87,13 @@ const store = reactive({
     syncKeyInput: '',
     syncDecryptError: false,
 
+    // Speech recognition
+    speechEnabled: localStorage.getItem('speechEnabled') === 'true',
+    speechLoading: false,
+    speechListening: false,
+    speechPartial: '',
+    speechTarget: null, // 'shopping' | 'recipeName' | 'ingredient'
+
     // Data
     recipes: [],
     weekplan: null,
@@ -1097,6 +1104,112 @@ const store = reactive({
         if (window.syncManager) {
             window.syncManager.syncNow();
         }
+    },
+
+    // === SPEECH RECOGNITION ===
+
+    async enableSpeech() {
+        if (this.speechLoading) return;
+        this.speechLoading = true;
+
+        try {
+            const { initSpeechModel } = await import('./speech.js');
+            await initSpeechModel();
+            this.speechEnabled = true;
+            localStorage.setItem('speechEnabled', 'true');
+        } catch (err) {
+            console.error('[App] Speech init failed:', err);
+            await modal().alert('Spracherkennung konnte nicht aktiviert werden: ' + err.message);
+        }
+        this.speechLoading = false;
+    },
+
+    disableSpeech() {
+        import('./speech.js').then(({ terminateSpeech }) => {
+            terminateSpeech();
+        });
+        this.speechEnabled = false;
+        this.speechListening = false;
+        this.speechPartial = '';
+        localStorage.removeItem('speechEnabled');
+        localStorage.removeItem('speechModelLoaded');
+    },
+
+    async toggleSpeechListening(target) {
+        if (!this.speechEnabled) return;
+
+        if (this.speechListening) {
+            this._stopSpeech();
+            return;
+        }
+
+        this.speechTarget = target;
+        this.speechPartial = '';
+
+        try {
+            const { startListening, isSpeechListening } = await import('./speech.js');
+
+            // Ensure model is loaded (might be a page reload with speechEnabled=true)
+            if (!isSpeechListening()) {
+                const { initSpeechModel } = await import('./speech.js');
+                try {
+                    await initSpeechModel();
+                } catch {
+                    await modal().alert('Sprachmodell konnte nicht geladen werden. Bitte erneut aktivieren.');
+                    this.speechEnabled = false;
+                    localStorage.removeItem('speechEnabled');
+                    return;
+                }
+            }
+
+            await startListening(
+                (text) => this._onSpeechResult(text),
+                (partial) => { this.speechPartial = partial; }
+            );
+            this.speechListening = true;
+        } catch (err) {
+            console.error('[App] Speech start failed:', err);
+            if (err.name === 'NotAllowedError') {
+                await modal().alert('Mikrofonzugriff wurde verweigert. Bitte erlaube den Zugriff in den Browser-Einstellungen.');
+            } else {
+                await modal().alert('Mikrofon konnte nicht gestartet werden: ' + err.message);
+            }
+        }
+    },
+
+    _onSpeechResult(text) {
+        if (!text) return;
+
+        switch (this.speechTarget) {
+            case 'shopping':
+                this.newShoppingItem = text;
+                this.addShoppingItem();
+                break;
+            case 'recipeName':
+                if (this.editingRecipe) {
+                    this.editingRecipe.name = text;
+                }
+                break;
+            case 'ingredient':
+                if (this.editingRecipe) {
+                    // Add as new ingredient with recognized text as name
+                    this.editingRecipe.ingredients.push({
+                        name: text,
+                        amount: '',
+                        unit: ''
+                    });
+                }
+                break;
+        }
+
+        this.speechPartial = '';
+    },
+
+    async _stopSpeech() {
+        const { stopListening } = await import('./speech.js');
+        stopListening();
+        this.speechListening = false;
+        this.speechPartial = '';
     },
 
     _applyShoppingListChecked(checkedItems) {

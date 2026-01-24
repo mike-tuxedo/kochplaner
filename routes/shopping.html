@@ -14,8 +14,10 @@
 <div class="shopping-add">
     <form @submit.prevent="addShoppingItem()" role="group">
         <input type="text" v-model="newShoppingItem" placeholder="Eintrag hinzufügen...">
+        <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'shopping' }" @click="toggleSpeechListening('shopping')" title="Spracheingabe">&#x1F3A4;</button>
         <button type="submit" :disabled="!newShoppingItem.trim()">+</button>
     </form>
+    <div v-if="speechListening && speechTarget === 'shopping' && speechPartial" class="speech-partial">{{ speechPartial }}</div>
 </div>
 
 <!-- Einkaufsliste -->
