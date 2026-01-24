@@ -32,7 +32,7 @@
         Wenn du noch Inspiration brauchst dann schau bei der <button class="btn-small" @click="navigateTo(2)">Rezeptseite</button> nach und klicke dort einfach auf <b>Rezeptidee</b>.
     </small>
     <hr>
-    <button :class="{ outline: theme === 'dark' }" v-else @click="generateNewWeek()">Wochenplan erstellen</button>
+    <button :class="{ outline: theme === 'dark' }" @click="generateNewWeek()">Wochenplan erstellen</button>
 </article>
 
 <!-- Wochenplan vorhanden -->

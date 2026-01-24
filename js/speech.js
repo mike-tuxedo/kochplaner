@@ -41,55 +41,42 @@ function loadVoskLibrary() {
     });
 }
 
-const MODEL_CACHE_KEY = 'vosk-model-de';
-
 /**
- * Download the model with progress tracking, using Cache API for persistence.
+ * Pre-fetch the model with progress tracking.
+ * The browser's HTTP cache will store it for Vosk's subsequent fetch.
  * @param {function} onProgress - Progress callback (0-1)
- * @returns {Promise<string>} Blob URL pointing to the downloaded model
  */
-async function downloadModelWithProgress(onProgress) {
-    // Check Cache API first
-    const cache = await caches.open('vosk-models');
-    const cached = await cache.match(MODEL_CACHE_KEY);
-    if (cached) {
+async function prefetchModelWithProgress(onProgress) {
+    // Skip download if model was previously loaded (browser cache will serve it)
+    if (localStorage.getItem('speechModelLoaded') === 'true') {
         if (onProgress) onProgress(1);
-        const blob = await cached.blob();
-        return URL.createObjectURL(blob);
+        return;
     }
 
-    // Download with progress
     const response = await fetch(MODEL_URL);
     if (!response.ok) throw new Error(`Download fehlgeschlagen (HTTP ${response.status})`);
 
     const contentLength = response.headers.get('Content-Length');
     const total = contentLength ? parseInt(contentLength, 10) : 0;
     const reader = response.body.getReader();
-    const chunks = [];
     let received = 0;
 
+    // Read through the stream for progress (browser caches the response)
     while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        chunks.push(value);
         received += value.length;
         if (onProgress && total > 0) {
             onProgress(received / total);
         }
     }
 
-    const blob = new Blob(chunks, { type: 'application/gzip' });
-
-    // Store in Cache for future use
-    await cache.put(MODEL_CACHE_KEY, new Response(blob));
-
     if (onProgress) onProgress(1);
-    return URL.createObjectURL(blob);
 }
 
 /**
  * Initialize the speech recognition model.
- * Downloads ~45MB model on first call (cached afterwards via Cache API).
+ * Downloads ~45MB model on first call (cached by browser afterwards).
  * @param {function} onProgress - Progress callback (0-1)
  * @returns {Promise<boolean>} true if model loaded successfully
  */
@@ -98,10 +85,11 @@ export async function initSpeechModel(onProgress) {
 
     const Vosk = await loadVoskLibrary();
 
-    // Download model with progress (or load from cache)
-    const modelUrl = await downloadModelWithProgress(onProgress);
+    // Pre-fetch model with progress (browser HTTP cache stores it)
+    await prefetchModelWithProgress(onProgress);
 
-    model = await Vosk.createModel(modelUrl);
+    // Vosk fetches from the same URL (served from HTTP cache instantly)
+    model = await Vosk.createModel(MODEL_URL);
 
     model.on('error', (err) => {
         console.error('[Speech] Model load error:', err);
