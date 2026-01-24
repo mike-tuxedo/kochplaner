@@ -179,49 +179,76 @@ Nested CSS für:
 
 ## 🚀 Implementierungs-Reihenfolge
 
-### Phase 1: Grundgerüst
+### Phase 1: Grundgerüst ✅
 - [x] Projektstruktur anlegen
-- [ ] Pico CSS lokal einbinden
-- [ ] idb Library lokal einbinden
-- [ ] HTML-Grundstruktur (SPA-Shell)
-- [ ] Service Worker Setup
-- [ ] Hash-Routing implementieren
+- [x] Pico CSS lokal einbinden
+- [x] idb Library lokal einbinden
+- [x] HTML-Grundstruktur (SPA-Shell)
+- [x] Service Worker Setup
+- [x] Hash-Routing implementieren
 
-### Phase 2: Datenschicht
-- [ ] IndexedDB initialisieren (storage.js)
-- [ ] CRUD-Funktionen für Rezepte
-- [ ] CRUD-Funktionen für Wochenpläne
+### Phase 2: Datenschicht ✅
+- [x] IndexedDB initialisieren (storage.js)
+- [x] CRUD-Funktionen für Rezepte
+- [x] CRUD-Funktionen für Wochenpläne
 
-### Phase 3: Rezepte-Modul
-- [ ] Rezepte-Liste anzeigen
-- [ ] Rezept hinzufügen (Formular)
-- [ ] Rezept bearbeiten/löschen
-- [ ] Zutaten dynamisch hinzufügen/entfernen
+### Phase 3: Rezepte-Modul ✅
+- [x] Rezepte-Liste anzeigen
+- [x] Rezept hinzufügen (Formular)
+- [x] Rezept bearbeiten/löschen
+- [x] Zutaten dynamisch hinzufügen/entfernen
 
-### Phase 4: Wochenplan
-- [ ] Random-Algorithmus implementieren
-- [ ] Wochenplan-Ansicht (7 Tage)
-- [ ] Edit-Modus (Rezept pro Tag ändern)
-- [ ] "Neue Woche generieren" Funktion
+### Phase 4: Wochenplan ✅
+- [x] Random-Algorithmus implementieren
+- [x] Wochenplan-Ansicht (7 Tage)
+- [x] Edit-Modus (Rezept pro Tag ändern)
+- [x] "Neue Woche generieren" Funktion
 
-### Phase 5: Einkaufsliste
-- [ ] Zutaten aus Wochenplan aggregieren
-- [ ] Gleiche Zutaten zusammenfassen
-- [ ] Abhak-Funktion
-- [ ] Text-Export
+### Phase 5: Einkaufsliste ✅ (Basis fertig, Erweiterungen offen)
+- [x] Zutaten aus Wochenplan aggregieren
+- [x] Gleiche Zutaten zusammenfassen
+- [x] Abhak-Funktion
+- [x] Text-Export / Share
+- [ ] Sortierbar am Handy (Drag & Drop)
+- [ ] Manuell bearbeitbar:
+  - [ ] Einträge hinzufügen
+  - [ ] Einträge löschen
+  - [ ] Einträge umschreiben
 
-### Phase 6: API-Integration
-- [ ] TheMealDB API einbinden
-- [ ] Zufälliges Rezept abrufen
-- [ ] Rezept-Import-Funktion
-- [ ] Offline-Fallback
+### Phase 6: API-Integration ✅
+- [x] TheMealDB API einbinden
+- [x] Zufälliges Rezept abrufen
+- [x] Rezept-Import-Funktion
+- [x] Offline-Fallback
+- [x] Auto-Übersetzung (MyMemory API)
 
-### Phase 7: Polish
-- [ ] Custom CSS (nested)
-- [ ] Responsive Design testen
-- [ ] PWA-Icons erstellen
-- [ ] UX-Verbesserungen
-- [ ] Animationen (optional)
+### Phase 7: Polish ✅
+- [x] Custom CSS (nested)
+- [x] Responsive Design
+- [x] PWA-Icons erstellen
+- [x] UX-Verbesserungen
+- [x] Animationen (Bubbles-Hintergrund)
+
+### Phase 8: Multi-Device Sync ✅ (Basis fertig, Verbesserungen offen)
+- [x] Loro CRDT für konfliktfreies Merging
+- [x] WebSocket Relay Server
+- [x] Ende-zu-Ende Verschlüsselung (AES-256-GCM)
+- [x] Sync-Key Generierung & Import
+- [x] QR-Code Sharing
+- [x] Shopping-List Sync (Checked-State)
+- [ ] Sync UI zum Teilen überarbeiten/vereinfachen
+- [ ] Spezialfall durchdenken: beide Geräte haben bereits Rezepte, Wochenplan etc. — was passiert beim initialen Sync?
+
+### Phase 9: Spracheingabe (Vosk)
+- [ ] Vosk WebAssembly Integration (https://alphacephei.com/vosk/integrations)
+- [ ] Rezepte per Sprache eingeben
+- [ ] Einkaufslisteneinträge per Sprache hinzufügen
+
+### Phase 10: Projekt-Cleanup & Refactoring
+- [ ] Ungenutzten Code/Dateien löschen
+- [ ] CSS konsequent nested gestalten
+- [ ] Mehr Pico CSS Styling nutzen (eigene Farben/Styles reduzieren)
+- [ ] Code Refactoring (Modularisierung, Lesbarkeit)
 
 ## 📚 Externe Ressourcen
 
@@ -255,6 +282,6 @@ Die App ist fertig, wenn:
 
 ---
 
-**Stand:** 2026-01-13
-**Technologie-Stack:** HTML, CSS (Pico CSS), Vanilla JavaScript, IndexedDB, Service Worker
-**Besonderheit:** Keine Build-Tools, komplett offline-fähig, local-first
+**Stand:** 2026-01-24
+**Technologie-Stack:** HTML, CSS (Pico CSS), Vanilla JavaScript (petite-vue), IndexedDB, Service Worker, Loro CRDT, WebSocket
+**Besonderheit:** Keine Build-Tools, komplett offline-fähig, local-first, E2E-verschlüsselter Multi-Device Sync

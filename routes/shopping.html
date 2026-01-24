@@ -4,23 +4,59 @@
 </div>
 
 <!-- Keine Einkaufsliste -->
-<div v-if="shoppingList.length === 0" class="empty-state">
+<div v-if="shoppingList.length === 0 && !weekplan" class="empty-state">
     <p>Keine Einkaufsliste verfügbar.</p>
     <p>Erstelle zuerst einen Wochenplan!</p>
     <button class="mt-1" :class="{ outline: theme === 'dark' }" @click="navigateTo(1)">Zum Wochenplan</button>
+</div>
+
+<!-- Eintrag hinzufügen -->
+<div class="shopping-add">
+    <form @submit.prevent="addShoppingItem()" role="group">
+        <input type="text" v-model="newShoppingItem" placeholder="Eintrag hinzufügen...">
+        <button type="submit" :disabled="!newShoppingItem.trim()">+</button>
+    </form>
 </div>
 
 <!-- Einkaufsliste -->
 <article v-if="shoppingList.length > 0">
     <div class="shopping-list">
         <div v-for="(item, index) in shoppingList" :key="index"
-             class="item" :class="{ checked: item.checked }">
-            <input type="checkbox" :id="'item-' + index"
-                   v-model="item.checked" @change="syncShoppingList(item)">
-            <label :for="'item-' + index" class="ingredient-info">
-                <div>{{ item.name }}</div>
-                <div class="amount">{{ item.amount }} {{ item.unit }}</div>
-            </label>
+             class="item" :class="{ checked: item.checked, dragging: dragIndex === index }"
+             :data-index="index"
+             draggable="true"
+             @dragstart="onDragStart(index, $event)"
+             @dragover="onDragOver(index, $event)"
+             @dragend="onDragEnd($event)"
+             @touchstart="onTouchStart(index, $event)"
+             @touchmove="onTouchMove($event)"
+             @touchend="onTouchEnd()">
+
+            <!-- Normal view -->
+            <template v-if="editingShoppingIndex !== index">
+                <span class="drag-handle">&#x2630;</span>
+                <input type="checkbox" :id="'item-' + index"
+                       v-model="item.checked" @change="syncShoppingList(item)">
+                <label :for="'item-' + index" class="ingredient-info" @dblclick="startEditItem(index)">
+                    <div>{{ item.name }}</div>
+                    <div class="amount" v-if="item.amount || item.unit">{{ item.amount }} {{ item.unit }}</div>
+                </label>
+                <div class="item-actions">
+                    <button class="btn-icon" @click="startEditItem(index)" title="Bearbeiten">&#x270E;</button>
+                    <button class="btn-icon btn-delete" @click="removeShoppingItem(index)" title="Löschen">&times;</button>
+                </div>
+            </template>
+
+            <!-- Edit view -->
+            <template v-else>
+                <form class="item-edit-form" @submit.prevent="saveEditItem(index)">
+                    <input type="text" v-model="editingShoppingText" placeholder="Name" class="edit-name" autofocus>
+                    <input type="number" v-model="editingShoppingAmount" placeholder="Menge" class="edit-amount" step="any">
+                    <input type="text" v-model="editingShoppingUnit" placeholder="Einheit" class="edit-unit">
+                    <button type="submit" class="btn-icon" title="Speichern">&#x2713;</button>
+                    <button type="button" class="btn-icon" @click="cancelEditItem()" title="Abbrechen">&times;</button>
+                </form>
+            </template>
         </div>
     </div>
 </article>

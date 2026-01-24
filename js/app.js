@@ -91,6 +91,13 @@ const store = reactive({
     recipes: [],
     weekplan: null,
     shoppingList: [],
+    customShoppingItems: [],
+    newShoppingItem: '',
+    editingShoppingIndex: -1,
+    editingShoppingText: '',
+    editingShoppingAmount: '',
+    editingShoppingUnit: '',
+    dragIndex: -1,
     editingRecipe: null,
     selectedDayIndex: null,
 
@@ -248,7 +255,7 @@ const store = reactive({
             await setSetting('currentWeekId', null);
             // Reload
             await this.loadRecipes();
-            this.generateShoppingList();
+            await this.generateShoppingList();
             await modal().alert('Alle Daten wurden gelöscht.');
         } catch (err) {
             await modal().alert('Fehler: ' + err.message);
@@ -485,7 +492,7 @@ const store = reactive({
         if (weekId) {
             this.weekplan = await getWeekplan(weekId);
         }
-        this.generateShoppingList();
+        await this.generateShoppingList();
     },
 
     async generateNewWeek() {
@@ -540,7 +547,7 @@ const store = reactive({
         await saveWeekplan(weekplan);
         await setSetting('currentWeekId', weekplan.weekId);
         this.weekplan = weekplan;
-        this.generateShoppingList();
+        await this.generateShoppingList();
 
         // Sync if enabled
         if (window.syncManager?.isInitialized) {
@@ -560,7 +567,7 @@ const store = reactive({
         // Convert reactive proxy to plain object for IndexedDB
         const weekplanData = JSON.parse(JSON.stringify(this.weekplan));
         await saveWeekplan(weekplanData);
-        this.generateShoppingList();
+        await this.generateShoppingList();
 
         // Sync if enabled
         if (window.syncManager?.isInitialized) {
@@ -572,34 +579,58 @@ const store = reactive({
     },
 
     // === SHOPPING LIST ===
-    generateShoppingList() {
-        if (!this.weekplan) {
-            this.shoppingList = [];
-            return;
-        }
-
+    async generateShoppingList() {
         const ingredientsMap = new Map();
 
-        for (const day of this.weekplan.days) {
-            const recipe = this.getRecipeById(day.recipeId);
-            if (!recipe) continue;
+        if (this.weekplan) {
+            for (const day of this.weekplan.days) {
+                const recipe = this.getRecipeById(day.recipeId);
+                if (!recipe) continue;
 
-            for (const ing of recipe.ingredients) {
-                const key = `${ing.name.toLowerCase()}|${ing.unit}`;
-                if (ingredientsMap.has(key)) {
-                    ingredientsMap.get(key).amount += parseFloat(ing.amount) || 0;
-                } else {
-                    ingredientsMap.set(key, {
-                        name: ing.name,
-                        amount: parseFloat(ing.amount) || 0,
-                        unit: ing.unit,
-                        checked: false
-                    });
+                for (const ing of recipe.ingredients) {
+                    const key = `${ing.name.toLowerCase()}|${(ing.unit || '').toLowerCase()}`;
+                    if (ingredientsMap.has(key)) {
+                        ingredientsMap.get(key).amount += parseFloat(ing.amount) || 0;
+                    } else {
+                        ingredientsMap.set(key, {
+                            name: ing.name,
+                            amount: parseFloat(ing.amount) || 0,
+                            unit: ing.unit || '',
+                            checked: false,
+                            custom: false
+                        });
+                    }
                 }
             }
         }
 
-        this.shoppingList = Array.from(ingredientsMap.values());
+        // Load custom items from storage
+        const saved = await getSetting('customShoppingItems');
+        this.customShoppingItems = saved || [];
+
+        // Merge: auto-generated first, then custom items
+        const autoItems = Array.from(ingredientsMap.values());
+        const allItems = [...autoItems, ...this.customShoppingItems.map(ci => ({
+            ...ci,
+            custom: true
+        }))];
+
+        // Apply saved order if exists
+        const savedOrder = await getSetting('shoppingListOrder');
+        if (savedOrder && savedOrder.length > 0) {
+            allItems.sort((a, b) => {
+                const keyA = `${a.name.toLowerCase()}|${a.custom ? 'custom' : 'auto'}`;
+                const keyB = `${b.name.toLowerCase()}|${b.custom ? 'custom' : 'auto'}`;
+                const idxA = savedOrder.indexOf(keyA);
+                const idxB = savedOrder.indexOf(keyB);
+                if (idxA === -1 && idxB === -1) return 0;
+                if (idxA === -1) return 1;
+                if (idxB === -1) return 1;
+                return idxA - idxB;
+            });
+        }
+
+        this.shoppingList = allItems;
     },
 
     syncShoppingList(item) {
@@ -607,6 +638,175 @@ const store = reactive({
         if (window.syncManager?.isInitialized && item) {
             window.syncManager.saveShoppingListItem(item.name, item.checked);
         }
+    },
+
+    async addShoppingItem() {
+        const name = this.newShoppingItem.trim();
+        if (!name) return;
+
+        const newItem = { name, amount: 0, unit: '', checked: false };
+        this.customShoppingItems.push(newItem);
+        await setSetting('customShoppingItems', this.customShoppingItems);
+
+        this.shoppingList.push({ ...newItem, custom: true });
+        this.newShoppingItem = '';
+    },
+
+    async removeShoppingItem(index) {
+        const item = this.shoppingList[index];
+        if (!item) return;
+
+        if (item.custom) {
+            // Remove from custom items
+            const ci = this.customShoppingItems.findIndex(c => c.name === item.name);
+            if (ci !== -1) this.customShoppingItems.splice(ci, 1);
+            await setSetting('customShoppingItems', this.customShoppingItems);
+        }
+
+        this.shoppingList.splice(index, 1);
+        await this._saveShoppingOrder();
+    },
+
+    startEditItem(index) {
+        const item = this.shoppingList[index];
+        this.editingShoppingIndex = index;
+        this.editingShoppingText = item.name;
+        this.editingShoppingAmount = item.amount || '';
+        this.editingShoppingUnit = item.unit || '';
+    },
+
+    cancelEditItem() {
+        this.editingShoppingIndex = -1;
+        this.editingShoppingText = '';
+        this.editingShoppingAmount = '';
+        this.editingShoppingUnit = '';
+    },
+
+    async saveEditItem(index) {
+        const item = this.shoppingList[index];
+        if (!item || !this.editingShoppingText.trim()) {
+            this.cancelEditItem();
+            return;
+        }
+
+        const oldName = item.name;
+        item.name = this.editingShoppingText.trim();
+        item.amount = parseFloat(this.editingShoppingAmount) || 0;
+        item.unit = this.editingShoppingUnit.trim();
+
+        if (item.custom) {
+            const ci = this.customShoppingItems.find(c => c.name === oldName);
+            if (ci) {
+                ci.name = item.name;
+                ci.amount = item.amount;
+                ci.unit = item.unit;
+            }
+            await setSetting('customShoppingItems', this.customShoppingItems);
+        }
+
+        this.cancelEditItem();
+        await this._saveShoppingOrder();
+    },
+
+    // Drag & Drop for reordering
+    onDragStart(index, event) {
+        this.dragIndex = index;
+        if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = 'move';
+        }
+        event.target.closest('.item')?.classList.add('dragging');
+    },
+
+    onDragOver(index, event) {
+        event.preventDefault();
+        if (this.dragIndex === index) return;
+
+        const items = [...this.shoppingList];
+        const [moved] = items.splice(this.dragIndex, 1);
+        items.splice(index, 0, moved);
+        this.shoppingList = items;
+        this.dragIndex = index;
+    },
+
+    async onDragEnd(event) {
+        event.target.closest('.item')?.classList.remove('dragging');
+        this.dragIndex = -1;
+        await this._saveShoppingOrder();
+    },
+
+    // Touch drag & drop
+    _touchDragState: null,
+
+    onTouchStart(index, event) {
+        const touch = event.touches[0];
+        const itemEl = event.target.closest('.item');
+        if (!itemEl) return;
+
+        this._touchDragState = {
+            index,
+            startY: touch.clientY,
+            currentY: touch.clientY,
+            itemEl,
+            moved: false
+        };
+
+        // Long press to start drag
+        this._touchTimer = setTimeout(() => {
+            if (this._touchDragState) {
+                this._touchDragState.moved = true;
+                itemEl.classList.add('dragging');
+                this.dragIndex = index;
+            }
+        }, 200);
+    },
+
+    onTouchMove(event) {
+        if (!this._touchDragState || !this._touchDragState.moved) {
+            if (this._touchDragState) {
+                const touch = event.touches[0];
+                const dy = Math.abs(touch.clientY - this._touchDragState.startY);
+                if (dy > 10) {
+                    clearTimeout(this._touchTimer);
+                    this._touchDragState = null;
+                }
+            }
+            return;
+        }
+
+        event.preventDefault();
+        const touch = event.touches[0];
+        this._touchDragState.currentY = touch.clientY;
+
+        // Find target item under touch
+        const elements = document.elementsFromPoint(touch.clientX, touch.clientY);
+        const targetItem = elements.find(el => el.classList?.contains('item') && el !== this._touchDragState.itemEl);
+        if (targetItem) {
+            const targetIndex = parseInt(targetItem.dataset.index);
+            if (!isNaN(targetIndex) && targetIndex !== this.dragIndex) {
+                const items = [...this.shoppingList];
+                const [moved] = items.splice(this.dragIndex, 1);
+                items.splice(targetIndex, 0, moved);
+                this.shoppingList = items;
+                this.dragIndex = targetIndex;
+            }
+        }
+    },
+
+    async onTouchEnd() {
+        clearTimeout(this._touchTimer);
+        if (this._touchDragState?.moved) {
+            this._touchDragState.itemEl.classList.remove('dragging');
+            this.dragIndex = -1;
+            await this._saveShoppingOrder();
+        }
+        this._touchDragState = null;
+    },
+
+    async _saveShoppingOrder() {
+        const order = this.shoppingList.map(item =>
+            `${item.name.toLowerCase()}|${item.custom ? 'custom' : 'auto'}`
+        );
+        await setSetting('shoppingListOrder', order);
     },
 
     async shareShoppingList() {
@@ -806,9 +1006,9 @@ const store = reactive({
 
                 if (weekplan) {
                     this.weekplan = { weekId: '', startDate: '', days: [], updatedAt: 0 };
-                    setTimeout(() => {
+                    setTimeout(async () => {
                         this.weekplan = weekplan;
-                        this.generateShoppingList();
+                        await this.generateShoppingList();
                         if (Object.keys(checked).length > 0) {
                             this._applyShoppingListChecked(checked);
                         }
@@ -842,7 +1042,7 @@ const store = reactive({
             const syncedWeekplan = syncManager.getWeekplan();
             if (syncedWeekplan) {
                 this.weekplan = syncedWeekplan;
-                this.generateShoppingList();
+                await this.generateShoppingList();
             }
 
             console.log('[App] Sync enabled (encrypted)');
