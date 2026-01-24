@@ -21,7 +21,6 @@ import {
 import { generateSyncKey, storeSyncKey, loadSyncKey, clearSyncKey } from './crypto.js';
 import { renderQR, startScanner, stopScanner } from './qr.js';
 
-console.log('[App] Starting Kochplaner...');
 
 // Modal helper
 const modal = () => $id('appModal');
@@ -29,7 +28,6 @@ const modal = () => $id('appModal');
 // Load pages first, then initialize store
 await loadPages();
 await initDB();
-console.log('[App] Database initialized');
 
 // Days of week
 const DAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
@@ -1074,7 +1072,6 @@ const store = reactive({
                 await this.generateShoppingList();
             }
 
-            console.log('[App] Sync enabled (encrypted)');
         } catch (err) {
             console.error('[App] Sync init failed:', err);
             await modal().alert('Sync konnte nicht aktiviert werden: ' + err.message);
@@ -1097,7 +1094,6 @@ const store = reactive({
         this.syncDecryptError = false;
         clearSyncKey();
         localStorage.removeItem('syncEnabled');
-        console.log('[App] Sync disabled');
     },
 
     syncNow() {
@@ -1281,7 +1277,6 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', async () => {
         try {
             await navigator.serviceWorker.register('./sw.js');
-            console.log('[App] Service Worker registered');
         } catch (err) {
             console.error('[App] SW registration failed:', err);
         }
@@ -1316,7 +1311,6 @@ let deferredInstallPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredInstallPrompt = e;
-    console.log('[App] Install prompt available');
 });
 
 // Welcome page: Install and start
@@ -1342,7 +1336,6 @@ store.installAndStart = async function() {
         // Android/Desktop: Trigger native install prompt
         deferredInstallPrompt.prompt();
         const { outcome } = await deferredInstallPrompt.userChoice;
-        console.log('[App] Install outcome:', outcome);
         if (outcome === 'accepted') {
             deferredInstallPrompt = null;
         }
@@ -1391,7 +1384,6 @@ window.installApp = async function() {
     if (deferredInstallPrompt) {
         deferredInstallPrompt.prompt();
         const { outcome } = await deferredInstallPrompt.userChoice;
-        console.log('[App] Install outcome:', outcome);
         if (outcome === 'accepted') {
             deferredInstallPrompt = null;
         }
@@ -1402,5 +1394,3 @@ window.installApp = async function() {
         );
     }
 };
-
-console.log('[App] Ready!');

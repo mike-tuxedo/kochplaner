@@ -21,8 +21,8 @@ html {
     }
 
     /* ==========================================
-    Layout: Main & Pages
-    ========================================== */
+       Layout: Main & Pages
+       ========================================== */
     main {
         display: grid;
         grid-row-start: 1;
@@ -124,8 +124,8 @@ html {
     }
 
     /* ==========================================
-    Generell Defaults
-    ========================================== */
+       General Defaults
+       ========================================== */
     button svg {
         width: 20px;
         height: 20px;
@@ -967,8 +967,8 @@ html {
     }
 
     /* ==========================================
-    Drawer Recipe List
-========================================== */
+       Drawer Recipe List
+       ========================================== */
     .drawer-recipe-list {
         .drawer-recipe-item {
             padding: 0.75rem;
@@ -986,8 +986,8 @@ html {
     }
 
     /* ==========================================
-    Suggestion Drawer
-========================================== */
+       Suggestion Drawer
+       ========================================== */
     .suggestion-content {
         .suggestion-card {
             background: var(--pico-card-background-color);
@@ -1070,8 +1070,8 @@ html {
     }
 
     /* ==========================================
-    Modal Component
-========================================== */
+       Modal Component
+       ========================================== */
     app-modal {
         position: fixed;
         top: 0;
@@ -1158,43 +1158,43 @@ html {
     }
 
     /* ==========================================
-    Toast Notification
-========================================== */
-.toast {
-    position: fixed;
-    bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%) translateY(30px);
-    background: var(--pico-primary);
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--pico-border-radius);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 2000;
-    font-size: 0.9rem;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-
-    &.show {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-        transform: translateX(-50%) translateY(0);
-        animation: toastIn 0.4s ease;
-    }
-}
-
-@keyframes toastIn {
-    from {
-        opacity: 0;
+       Toast Notification
+       ========================================== */
+    .toast {
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
         transform: translateX(-50%) translateY(30px);
+        background: var(--pico-primary);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: var(--pico-border-radius);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 2000;
+        font-size: 0.9rem;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+
+        &.show {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateX(-50%) translateY(0);
+            animation: toastIn 0.4s ease;
+        }
     }
-    to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
+
+    @keyframes toastIn {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
     }
-}
 
     /* ==========================================
        Speech Recognition
@@ -1248,8 +1248,8 @@ html {
     }
 
     /* ==========================================
-    Helper Classes
-========================================== */
+       Helper Classes
+       ========================================== */
     .hide {
         display: none !important;
     }
@@ -1272,7 +1272,7 @@ html {
     .gap-1 {
         gap: 1rem;
     }
-    
+
     .gap-2 {
         gap: 2rem;
     }

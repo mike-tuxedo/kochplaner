@@ -50,14 +50,10 @@ function loadVoskLibrary() {
 export async function initSpeechModel(onProgress) {
     if (isModelLoaded && model) return true;
 
-    console.log('[Speech] Loading Vosk library...');
     const Vosk = await loadVoskLibrary();
-
-    console.log('[Speech] Loading German model...');
     model = await Vosk.createModel(MODEL_URL);
 
     model.on('load', () => {
-        console.log('[Speech] Model loaded successfully');
         isModelLoaded = true;
     });
 
@@ -147,7 +143,6 @@ export async function startListening(onResult, onPartial) {
     processorNode.connect(audioContext.destination);
 
     isListening = true;
-    console.log('[Speech] Listening started');
 }
 
 /**
@@ -182,7 +177,6 @@ export function stopListening() {
     }
 
     isListening = false;
-    console.log('[Speech] Listening stopped');
 }
 
 /**

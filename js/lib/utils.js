@@ -2,8 +2,6 @@
  * utils.js - Utility functions for DOM manipulation
  */
 
-console.log('[Utils] Loaded');
-
 /**
  * Shorthand for document.getElementById
  * @param {string} id - Element ID

@@ -3,8 +3,6 @@
  * Fetches HTML templates from /routes/ and injects them into the DOM
  */
 
-console.log('[Navigation] Loaded');
-
 /**
  * Page configuration
  */
@@ -54,14 +52,10 @@ async function getPageContent(page) {
  * @returns {Promise<{success: boolean, loaded: number, failed: number}>}
  */
 export async function loadPages() {
-    console.log('[Navigation] Loading pages...');
-
     const results = await Promise.all(PAGES.map(page => getPageContent(page)));
 
     const loaded = results.filter(Boolean).length;
     const failed = results.length - loaded;
-
-    console.log(`[Navigation] Pages loaded: ${loaded}/${results.length}`);
 
     window.dispatchEvent(new CustomEvent('pagesReady', {
         detail: { loaded, failed }

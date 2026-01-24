@@ -48,7 +48,6 @@ class SyncManager {
     async initWithKey(syncKey) {
         this.docId = await deriveDocId(syncKey);
         this.aesKey = await deriveAesKey(syncKey);
-        console.log('[Sync] Encryption initialized, docId:', this.docId);
     }
 
     /**
@@ -58,29 +57,18 @@ class SyncManager {
         if (this.isInitialized) return this;
         if (!this.docId) throw new Error('Call initWithKey() before init()');
 
-        console.log('[Sync] Initializing Loro...');
-
-        // Initialize WASM
         await init();
-        console.log('[Sync] WASM initialized');
-
-        // Open IndexedDB
         this.db = await this._openDB();
-        console.log('[Sync] IndexedDB opened');
 
-        // Load or create document
         const snapshot = await this._loadSnapshot();
         if (snapshot) {
-            console.log('[Sync] Loading document from snapshot...');
             this.doc = LoroDoc.fromSnapshot(snapshot);
         } else {
-            console.log('[Sync] Creating new document...');
             this.doc = new LoroDoc();
             this._initializeDocument();
         }
 
         this.isInitialized = true;
-        console.log('[Sync] Initialization complete');
         return this;
     }
 
@@ -146,7 +134,6 @@ class SyncManager {
                 request.onsuccess = () => resolve();
             });
 
-            console.log('[Sync] Snapshot saved to IndexedDB');
         } catch (err) {
             console.error('[Sync] Failed to save snapshot:', err);
         }
@@ -161,13 +148,11 @@ class SyncManager {
         }
 
         this.wsUrl = wsUrl;
-        console.log('[Sync] Connecting to', wsUrl);
 
         try {
             this.ws = new WebSocket(wsUrl);
 
             this.ws.onopen = () => {
-                console.log('[Sync] WebSocket connected');
                 this.isConnected = true;
                 this.reconnectAttempts = 0;
                 if (this.onStatusChange) this.onStatusChange(true);
@@ -181,7 +166,6 @@ class SyncManager {
             };
 
             this.ws.onclose = () => {
-                console.log('[Sync] WebSocket disconnected');
                 this.isConnected = false;
                 if (this.onStatusChange) this.onStatusChange(false);
                 this._scheduleReconnect();
@@ -201,13 +185,11 @@ class SyncManager {
      */
     _scheduleReconnect() {
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-            console.log('[Sync] Max reconnect attempts reached');
             return;
         }
 
         this.reconnectAttempts++;
         const delay = this.reconnectDelay * this.reconnectAttempts;
-        console.log(`[Sync] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
 
         setTimeout(() => {
             if (!this.isConnected && this.wsUrl) {
@@ -263,7 +245,6 @@ class SyncManager {
             }));
 
             this._lastSentVersion = currentVersion;
-            console.log('[Sync] Update sent to server');
         } catch (err) {
             console.error('[Sync] Failed to send update:', err);
         }
@@ -286,7 +267,6 @@ class SyncManager {
     async _handleServerMessage(data) {
         try {
             const message = JSON.parse(data);
-            console.log('[Sync] Received message:', message.type);
 
             if (message.type === 'get' || message.type === 'update') {
                 if (message.payload?.binary) {
@@ -395,7 +375,6 @@ class SyncManager {
             }));
 
             recipesMap.set(id, recipeData);
-            console.log('[Sync] Recipe saved:', id);
 
             // Trigger sync
             this._triggerSync();
@@ -423,7 +402,6 @@ class SyncManager {
                     deleted: true,
                     deletedAt: Date.now()
                 })));
-                console.log('[Sync] Recipe deleted:', id);
 
                 // Trigger sync
                 this._triggerSync();
@@ -460,7 +438,6 @@ class SyncManager {
         weekplanMap.set('days', weekplan.days);
         weekplanMap.set('updatedAt', Date.now());
 
-        console.log('[Sync] Weekplan saved');
 
         // Trigger sync
         this._triggerSync();
@@ -485,8 +462,6 @@ class SyncManager {
         for (const [name, checked] of Object.entries(checkedItems)) {
             checkedMap.set(name, checked);
         }
-
-        console.log('[Sync] Shopping list checked state saved');
 
         // Trigger sync
         this._triggerSync();

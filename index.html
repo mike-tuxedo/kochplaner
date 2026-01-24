@@ -284,7 +284,7 @@
             height: var(--bubble-radius);
             border-radius: 50%;
             animation: float-up var(--bubble-float-duration) var(--bubble-float-delay) ease-in infinite;
-            background: rgba(255, 217, 46, 0.082);
+            background: color-mix(in srgb, var(--pico-primary-background) 12%, transparent);
         }
 
         .bubble::before {
@@ -294,7 +294,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 217, 46, 0.041);
+            background: color-mix(in srgb, var(--pico-primary-background) 6%, transparent);
             border-radius: inherit;
             animation: var(--bubble-sway-type) var(--bubble-sway-duration) var(--bubble-sway-delay) ease-in-out alternate infinite;
         }
