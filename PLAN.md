@@ -204,16 +204,16 @@ Nested CSS für:
 - [x] Edit-Modus (Rezept pro Tag ändern)
 - [x] "Neue Woche generieren" Funktion
 
-### Phase 5: Einkaufsliste ✅ (Basis fertig, Erweiterungen offen)
+### Phase 5: Einkaufsliste ✅
 - [x] Zutaten aus Wochenplan aggregieren
 - [x] Gleiche Zutaten zusammenfassen
 - [x] Abhak-Funktion
 - [x] Text-Export / Share
-- [ ] Sortierbar am Handy (Drag & Drop)
-- [ ] Manuell bearbeitbar:
-  - [ ] Einträge hinzufügen
-  - [ ] Einträge löschen
-  - [ ] Einträge umschreiben
+- [x] Sortierbar am Handy (Drag & Drop)
+- [x] Manuell bearbeitbar:
+  - [x] Einträge hinzufügen
+  - [x] Einträge löschen
+  - [x] Einträge umschreiben
 
 ### Phase 6: API-Integration ✅
 - [x] TheMealDB API einbinden
@@ -229,26 +229,28 @@ Nested CSS für:
 - [x] UX-Verbesserungen
 - [x] Animationen (Bubbles-Hintergrund)
 
-### Phase 8: Multi-Device Sync ✅ (Basis fertig, Verbesserungen offen)
+### Phase 8: Multi-Device Sync ✅
 - [x] Loro CRDT für konfliktfreies Merging
 - [x] WebSocket Relay Server
 - [x] Ende-zu-Ende Verschlüsselung (AES-256-GCM)
 - [x] Sync-Key Generierung & Import
 - [x] QR-Code Sharing
 - [x] Shopping-List Sync (Checked-State)
-- [ ] Sync UI zum Teilen überarbeiten/vereinfachen
-- [ ] Spezialfall durchdenken: beide Geräte haben bereits Rezepte, Wochenplan etc. — was passiert beim initialen Sync?
+- [x] Sync UI zum Teilen überarbeiten (Icon im Key-Feld)
+- [x] Wochenplan-Konflikt: Popup bei unterschiedlichen Plänen
 
-### Phase 9: Spracheingabe (Vosk)
-- [ ] Vosk WebAssembly Integration (https://alphacephei.com/vosk/integrations)
-- [ ] Rezepte per Sprache eingeben
-- [ ] Einkaufslisteneinträge per Sprache hinzufügen
+### Phase 9: Spracheingabe (Vosk) ✅
+- [x] Vosk WebAssembly Integration
+- [x] Rezepte per Sprache eingeben (Name, Zubereitung, Zutaten)
+- [x] Einkaufslisteneinträge per Sprache hinzufügen
+- [x] Smart Ingredient Parsing (deutsche Zahlwörter & Einheiten)
 
-### Phase 10: Projekt-Cleanup & Refactoring
-- [ ] Ungenutzten Code/Dateien löschen
-- [ ] CSS konsequent nested gestalten
-- [ ] Mehr Pico CSS Styling nutzen (eigene Farben/Styles reduzieren)
-- [ ] Code Refactoring (Modularisierung, Lesbarkeit)
+### Phase 10: Projekt-Cleanup & Refactoring ✅
+- [x] Ungenutzten Code/Dateien löschen (empty package-lock.json, .gitignore aktualisiert)
+- [x] CSS konsequent nested gestalten (bereits umgesetzt)
+- [x] Duplicate CSS-Variable in theme.css entfernt
+- [x] Code Refactoring (iOS Install Dialog & goToApp Helfer konsolidiert)
+- [x] Rezeptidee Loading Indicator hinzugefügt
 
 ## 📚 Externe Ressourcen
 
@@ -282,6 +284,6 @@ Die App ist fertig, wenn:
 
 ---
 
-**Stand:** 2026-01-24
-**Technologie-Stack:** HTML, CSS (Pico CSS), Vanilla JavaScript (petite-vue), IndexedDB, Service Worker, Loro CRDT, WebSocket
-**Besonderheit:** Keine Build-Tools, komplett offline-fähig, local-first, E2E-verschlüsselter Multi-Device Sync
+**Stand:** 2026-01-25
+**Technologie-Stack:** HTML, CSS (Pico CSS), Vanilla JavaScript (petite-vue), IndexedDB, Service Worker, Loro CRDT, WebSocket, Vosk-Browser
+**Besonderheit:** Keine Build-Tools, komplett offline-fähig, local-first, E2E-verschlüsselter Multi-Device Sync, Offline-Spracheingabe

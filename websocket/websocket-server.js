@@ -120,7 +120,12 @@ function handleGet(ws, payload) {
             }));
             console.log(`[Server] Sent document: ${id} (${row.binary.length} bytes)`);
         } else {
-            console.log(`[Server] Document not found: ${id}`);
+            // Send empty response so client knows it can send its state
+            ws.send(JSON.stringify({
+                type: 'get',
+                payload: { id, binary: null }
+            }));
+            console.log(`[Server] Document not found: ${id} (sent empty response)`);
         }
     });
 }

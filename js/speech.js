@@ -47,12 +47,7 @@ function loadVoskLibrary() {
  * @param {function} onProgress - Progress callback (0-1)
  */
 async function prefetchModelWithProgress(onProgress) {
-    // Skip download if model was previously loaded (browser cache will serve it)
-    if (localStorage.getItem('speechModelLoaded') === 'true') {
-        if (onProgress) onProgress(1);
-        return;
-    }
-
+    // Always fetch - browser HTTP cache makes it instant if already downloaded
     const response = await fetch(MODEL_URL);
     if (!response.ok) throw new Error(`Download fehlgeschlagen (HTTP ${response.status})`);
 
@@ -85,31 +80,12 @@ export async function initSpeechModel(onProgress) {
 
     const Vosk = await loadVoskLibrary();
 
-    // Pre-fetch model with progress (browser HTTP cache stores it)
+    // Always prefetch for progress display (HTTP cache makes it instant if already cached)
     await prefetchModelWithProgress(onProgress);
 
-    // Vosk fetches from the same URL (served from HTTP cache instantly)
+    // Create model - vosk-browser createModel returns a Promise that resolves when ready
     model = await Vosk.createModel(MODEL_URL);
-
-    model.on('error', (err) => {
-        console.error('[Speech] Model load error:', err);
-    });
-
-    // Wait for model 'load' event
-    await new Promise((resolve, reject) => {
-        model.on('load', () => {
-            isModelLoaded = true;
-            resolve();
-        });
-
-        // Timeout for model initialization (not download - that's already done)
-        setTimeout(() => {
-            if (!isModelLoaded) {
-                reject(new Error('Model-Initialisierung Timeout'));
-            }
-        }, 60000);
-    });
-
+    isModelLoaded = true;
     localStorage.setItem('speechModelLoaded', 'true');
     return true;
 }

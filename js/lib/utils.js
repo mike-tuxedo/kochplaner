@@ -39,6 +39,13 @@ function generateUUID() {
 }
 
 /**
+ * Deep clone an object using JSON serialization
+ * @param {*} obj - Object to clone
+ * @returns {*} - Cloned object
+ */
+const deepClone = obj => JSON.parse(JSON.stringify(obj));
+
+/**
  * Escapes HTML special characters
  * @param {string} text
  * @returns {string}

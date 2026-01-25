@@ -143,7 +143,6 @@
         --pico-primary: #fecc63;
         --pico-primary-hover: #e8ae01;
         --pico-primary-hover-background: #fecc63;
-        --custom-body-background: radial-gradient(circle at 80% 120%, rgb(255, 245, 190), #ffd946 90%);
         --custom-body-background: #f4f4f4;
         --pico-primary-background: #ffbf00;
         --pico-primary-border: var(--pico-primary-background);

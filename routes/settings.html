@@ -88,9 +88,13 @@
         </div>
         <div class="sync-key-display">
             <code class="sync-key-text">{{ syncKey }}</code>
+            <button type="button" class="sync-key-copy" @click="shareSyncKey()" title="Kopieren / Teilen">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                    <path d="M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V21C16.9998 21.5523 16.5521 22 15.9998 22H3.9998C3.44752 22 2.9998 21.5523 2.9998 21V7C2.9998 6.44772 3.44752 6 3.9998 6H6.9998ZM8.9998 6H15.9998C16.5521 6 16.9998 6.44772 16.9998 7V16H18.9998V4H8.9998V6ZM4.9998 8V20H14.9998V8H4.9998Z"></path>
+                </svg>
+            </button>
         </div>
         <div class="settings-actions">
-            <button @click="shareSyncKey()">Kopieren / Teilen</button>
             <button class="secondary outline" @click="backToSyncActive()">Zurück</button>
         </div>
     </div>

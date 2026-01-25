@@ -36,6 +36,8 @@ class SyncManager {
         this._lastSentVersion = null;
         this.onChangeCallback = null;
         this.onStatusChange = null;
+        this.onWeekplanConflict = null;
+        this._initialSyncDone = false;
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 2000;
@@ -157,7 +159,8 @@ class SyncManager {
                 this.reconnectAttempts = 0;
                 if (this.onStatusChange) this.onStatusChange(true);
 
-                // Request current state from server
+                // Request current state from server first
+                // Local state will be sent after receiving server response (in _handleServerMessage)
                 this._requestState();
             };
 
@@ -268,7 +271,18 @@ class SyncManager {
         try {
             const message = JSON.parse(data);
 
-            if (message.type === 'get' || message.type === 'update') {
+            if (message.type === 'get') {
+                // Server response to our state request
+                if (message.payload?.binary) {
+                    // Merge server data first
+                    await this._mergeRemoteData(message.payload.binary, message.payload.encoding);
+                } else {
+                    // Server has no data - send our local state
+                    this._lastSentVersion = null; // Force full send
+                    await this._sendUpdate();
+                }
+            } else if (message.type === 'update') {
+                // Broadcast from another client
                 if (message.payload?.binary) {
                     await this._mergeRemoteData(message.payload.binary, message.payload.encoding);
                 }
@@ -304,8 +318,31 @@ class SyncManager {
                 }
             }
 
+            // Save local weekplan before merge for conflict detection
+            const localWeekplan = this.getWeekplan();
+
             // Import the remote data (Loro handles merge automatically)
             this.doc.import(binary);
+
+            // Get the merged weekplan
+            const mergedWeekplan = this.getWeekplan();
+
+            // Detect weekplan conflict: only on initial sync, when both had different weekplans
+            if (!this._initialSyncDone &&
+                localWeekplan && mergedWeekplan &&
+                localWeekplan.weekId !== mergedWeekplan.weekId &&
+                this.onWeekplanConflict) {
+                // Pass both weekplans to the conflict handler
+                // Handler should return chosen weekplan or null to keep merged
+                const chosen = await this.onWeekplanConflict(localWeekplan, mergedWeekplan);
+                if (chosen && chosen.weekId === localWeekplan.weekId) {
+                    // User chose local - restore it
+                    this.saveWeekplan(localWeekplan);
+                }
+            }
+
+            // Mark initial sync as done (conflict popup only once per session)
+            this._initialSyncDone = true;
 
             // Notify UI of remote changes immediately
             if (this.onChangeCallback) {
@@ -583,9 +620,8 @@ class SyncManager {
      */
     syncNow() {
         if (this.isConnected) {
-            this._lastSentVersion = null; // Force full send
+            // Request state from server - response handler will merge and send back
             this._requestState();
-            this._sendUpdate();
         }
     }
 }

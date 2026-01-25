@@ -42,7 +42,7 @@
     <footer class="pico" :data-color="theme" :class="{ 'hide': activePage === 0 }">
         <div role="group">
             <button :class="[activePage === 1 ? 'active' : '', theme === 'dark' ? 'outline' : '']"
-                @click="navigateTo(1)">
+                @pointerdown="navigateTo(1)">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                     <path
                         d="M9 1V3H15V1H17V3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H7V1H9ZM20 11H4V19H20V11ZM8 14V16H6V14H8ZM18 14V16H10V14H18ZM7 5H4V9H20V5H17V7H15V5H9V7H7V5Z">
@@ -51,7 +51,7 @@
                 <span>Plan</span>
             </button>
             <button :class="[activePage === 2 ? 'active' : '', theme === 'dark' ? 'outline' : '']"
-                @click="navigateTo(2)">
+                @pointerdown="navigateTo(2)">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                     <path
                         d="M14.2683 12.1466L13.4147 13.0002L20.4858 20.0712L19.0716 21.4854L12.0005 14.4144L4.92946 21.4854L3.51525 20.0712L12.854 10.7324C12.2664 9.27549 12.8738 7.17715 14.4754 5.57554C16.428 3.62292 19.119 3.14805 20.4858 4.51488C21.8526 5.88172 21.3778 8.57267 19.4251 10.5253C17.8235 12.1269 15.7252 12.7343 14.2683 12.1466ZM4.22235 3.80777L10.9399 10.5253L8.11144 13.3537L4.22235 9.46463C2.66026 7.90253 2.66026 5.36987 4.22235 3.80777Z">
@@ -60,7 +60,7 @@
                 <span>Rezepte</span>
             </button>
             <button :class="[activePage === 3 ? 'active' : '', theme === 'dark' ? 'outline' : '']"
-                @click="navigateTo(3)">
+                @pointerdown="navigateTo(3)">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                     <path
                         d="M12.0049 2C15.3186 2 18.0049 4.68629 18.0049 8V9H22.0049V11H20.8379L20.0813 20.083C20.0381 20.6013 19.6048 21 19.0847 21H4.92502C4.40493 21 3.97166 20.6013 3.92847 20.083L3.17088 11H2.00488V9H6.00488V8C6.00488 4.68629 8.69117 2 12.0049 2ZM18.8379 11H5.17088L5.84502 19H18.1647L18.8379 11ZM12.0049 4C9.86269 4 8.1138 5.68397 8.00978 7.80036L8.00488 8V9H16.0049V8C16.0049 5.8578 14.3209 4.10892 12.2045 4.0049L12.0049 4Z">
@@ -69,7 +69,7 @@
                 <span>Einkauf</span>
             </button>
             <button :class="[activePage === 4 ? 'active' : '', theme === 'dark' ? 'outline' : '']"
-                @click="navigateTo(4)">
+                @pointerdown="navigateTo(4)">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                     <path
                         d="M12 1L20.2169 6.5V17.5L12 23L3.78314 17.5V6.5L12 1ZM12 3.311L5.78314 7.65311V16.3469L12 20.689L18.2169 16.3469V7.65311L12 3.311ZM12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12C16 14.2091 14.2091 16 12 16ZM12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z">
@@ -100,16 +100,20 @@
                 Rezeptname
                 <div role="group">
                     <input type="text" v-model="editingRecipe.name" placeholder="z.B. Spaghetti Bolognese">
-                    <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'recipeName' }" @click="toggleSpeechListening('recipeName')" title="Spracheingabe">&#x1F3A4;</button>
+                    <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'recipeName', loading: speechLoading }" @click="toggleSpeechListening('recipeName')" title="Spracheingabe">&#x1F3A4;</button>
                 </div>
             </label>
             <div v-if="speechListening && speechTarget === 'recipeName' && speechPartial" class="speech-partial">{{ speechPartial }}</div>
 
             <label>
                 Zubereitung <small>(optional)</small>
-                <textarea v-model="editingRecipe.description"
-                    placeholder="Kurze Beschreibung oder Notizen zum Rezept..." rows="10"></textarea>
+                <div class="textarea-with-mic">
+                    <textarea v-model="editingRecipe.description"
+                        placeholder="Kurze Beschreibung oder Notizen zum Rezept..." rows="10"></textarea>
+                    <button type="button" v-if="speechEnabled" class="mic-btn textarea-mic" :class="{ active: speechListening && speechTarget === 'description', loading: speechLoading }" @click="toggleSpeechListening('description')" title="Spracheingabe">&#x1F3A4;</button>
+                </div>
             </label>
+            <div v-if="speechListening && speechTarget === 'description' && speechPartial" class="speech-partial">{{ speechPartial }}</div>
 
             <label>Foto <small>(optional)</small></label>
             <div class="recipe-photo-upload">
@@ -144,7 +148,7 @@
             <div class="add-ingredient-actions">
                 <button type="button" class="secondary add-ingredient-btn" :class="{ outline: theme === 'dark' }"
                     @click="addIngredient()">+ Zutat</button>
-                <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'ingredient' }" @click="toggleSpeechListening('ingredient')" title="Zutat einsprechen">&#x1F3A4;</button>
+                <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'ingredient', loading: speechLoading }" @click="toggleSpeechListening('ingredient')" title="Zutat einsprechen">&#x1F3A4;</button>
             </div>
             <div v-if="speechListening && speechTarget === 'ingredient' && speechPartial" class="speech-partial">{{ speechPartial }}</div>
 
@@ -158,7 +162,10 @@
     <!-- Drawer: Rezeptvorschlag -->
     <app-drawer id="suggestionDrawer" class="pico" :data-color="theme">
         <h3>Rezeptidee</h3>
-        <div v-if="suggestedRecipe" class="suggestion-content">
+        <div v-if="suggestionLoading" class="suggestion-loading" aria-busy="true">
+            <p>Lade Rezeptidee...</p>
+        </div>
+        <div v-else-if="suggestedRecipe" class="suggestion-content">
             <div class="suggestion-card" :class="{ 'has-photo': suggestedRecipe.photo }">
                 <img v-if="suggestedRecipe.photo" :src="suggestedRecipe.photo" alt="" class="suggestion-photo">
                 <div class="suggestion-card-content">

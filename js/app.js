@@ -53,6 +53,29 @@ const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches
 const welcomeSkipped = localStorage.getItem('welcomeSkipped');
 const showWelcome = !isStandaloneMode && !welcomeSkipped;
 
+// iOS install instructions helper
+async function showIOSInstallInstructions() {
+    await modal().custom({
+        title: 'App installieren',
+        html: `
+            <p><strong>So installierst du auf iOS:</strong></p>
+            <ol style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                <li>Tippe auf das Teilen-Symbol <span style="font-size: 1.1em;">&#9094;</span></li>
+                <li>Scrolle und wähle "Zum Home-Bildschirm"</li>
+            </ol>
+        `,
+        confirmText: 'Verstanden',
+        showCancel: false
+    });
+}
+
+// Navigate to main app (skip welcome)
+function goToApp() {
+    localStorage.setItem('welcomeSkipped', 'true');
+    store.activePage = 1;
+    history.replaceState(null, '', '#plan');
+}
+
 function getPageFromHash() {
     // Show welcome page on first visit if not installed
     if (showWelcome) return 0;
@@ -133,7 +156,7 @@ const store = reactive({
     },
 
     editRecipe(recipe) {
-        const parsed = JSON.parse(JSON.stringify(recipe));
+        const parsed = deepClone(recipe);
         // Ensure optional fields have default values
         this.editingRecipe = {
             description: '',
@@ -169,7 +192,7 @@ const store = reactive({
         );
 
         // Convert reactive proxy to plain object for IndexedDB
-        const recipeData = JSON.parse(JSON.stringify(this.editingRecipe));
+        const recipeData = deepClone(this.editingRecipe);
         await saveRecipe(recipeData);
 
         // Sync if enabled
@@ -353,10 +376,11 @@ const store = reactive({
 
     // === RECIPE SUGGESTIONS ===
     suggestedRecipe: null,
+    suggestionLoading: false,
 
     async showSuggestionDrawer() {
-        await this.getNewSuggestion();
         $id('suggestionDrawer')?.open();
+        await this.getNewSuggestion();
     },
 
     // Translate text using MyMemory API (free: 1000 words/day, max 500 chars/request)
@@ -407,6 +431,7 @@ const store = reactive({
     },
 
     async getNewSuggestion() {
+        this.suggestionLoading = true;
         try {
             // Use TheMealDB API for random recipes
             const response = await fetch('https://www.themealdb.com/api/json/v1/1/random.php');
@@ -462,6 +487,8 @@ const store = reactive({
                 }
             } catch { }
             this.suggestedRecipe = null;
+        } finally {
+            this.suggestionLoading = false;
         }
     },
 
@@ -534,7 +561,7 @@ const store = reactive({
         if (!this.suggestedRecipe) return;
 
         // Convert reactive proxy to plain object for IndexedDB
-        const recipe = JSON.parse(JSON.stringify(this.suggestedRecipe));
+        const recipe = deepClone(this.suggestedRecipe);
         recipe.id = null;
         const savedRecipe = await saveRecipe(recipe);
 
@@ -629,7 +656,7 @@ const store = reactive({
         this.weekplan.days[this.selectedDayIndex].recipeId = recipeId;
         this.weekplan.updatedAt = Date.now();
         // Convert reactive proxy to plain object for IndexedDB
-        const weekplanData = JSON.parse(JSON.stringify(this.weekplan));
+        const weekplanData = deepClone(this.weekplan);
         await saveWeekplan(weekplanData);
         await this.generateShoppingList();
 
@@ -733,11 +760,14 @@ const store = reactive({
 
     startEditItem(index) {
         const item = this.shoppingList[index];
-        // Set values before index to avoid blank flash on template switch
+        // Set values first
         this.editingShoppingText = item.name;
         this.editingShoppingAmount = item.amount || '';
         this.editingShoppingUnit = item.unit || '';
-        this.editingShoppingIndex = index;
+        // Delay index change to next frame so values are applied before template switch
+        requestAnimationFrame(() => {
+            this.editingShoppingIndex = index;
+        });
     },
 
     cancelEditItem() {
@@ -1069,7 +1099,7 @@ const store = reactive({
                 }
 
                 if (this.weekplan) {
-                    syncManager.saveWeekplan(JSON.parse(JSON.stringify(this.weekplan)));
+                    syncManager.saveWeekplan(deepClone(this.weekplan));
                 }
             }
 
@@ -1107,6 +1137,26 @@ const store = reactive({
                 this.syncConnected = connected;
             };
 
+            // Handle weekplan conflicts (both devices have different weekplans)
+            syncManager.onWeekplanConflict = async (localWeekplan, remoteWeekplan) => {
+                const localDate = new Date(localWeekplan.startDate).toLocaleDateString('de-DE');
+                const remoteDate = new Date(remoteWeekplan.startDate).toLocaleDateString('de-DE');
+
+                const choice = await modal().custom({
+                    title: 'Wochenplan-Konflikt',
+                    html: `<p>Beide Geräte haben unterschiedliche Wochenpläne.</p>
+                           <p><strong>Dieses Gerät:</strong> Woche ab ${localDate}</p>
+                           <p><strong>Anderes Gerät:</strong> Woche ab ${remoteDate}</p>
+                           <p>Welchen Wochenplan möchtest du verwenden?</p>`,
+                    confirmText: 'Anderes Gerät',
+                    cancelText: 'Dieses Gerät',
+                    showCancel: true
+                });
+
+                // choice = true means "Anderes Gerät" (remote), false means "Dieses Gerät" (local)
+                return choice ? remoteWeekplan : localWeekplan;
+            };
+
             // Connect to server
             localStorage.setItem('syncServerUrl', this.syncServerUrl);
             syncManager.connect(this.syncServerUrl);
@@ -1125,7 +1175,7 @@ const store = reactive({
                     this.weekplan = syncedWeekplan;
                 } else {
                     // Local is newer, re-save it to ensure it propagates
-                    syncManager.saveWeekplan(JSON.parse(JSON.stringify(this.weekplan)));
+                    syncManager.saveWeekplan(deepClone(this.weekplan));
                 }
                 await this.generateShoppingList();
             }
@@ -1142,6 +1192,7 @@ const store = reactive({
         if (window.syncManager) {
             window.syncManager.onStatusChange = null;
             window.syncManager.onDecryptError = null;
+            window.syncManager.onWeekplanConflict = null;
             window.syncManager.disconnect();
             window.syncManager = null;
         }
@@ -1205,20 +1256,26 @@ const store = reactive({
         this.speechPartial = '';
 
         try {
-            const { startListening, isSpeechListening } = await import('./speech.js');
+            const { startListening, initSpeechModel } = await import('./speech.js');
 
             // Ensure model is loaded (might be a page reload with speechEnabled=true)
-            if (!isSpeechListening()) {
-                const { initSpeechModel } = await import('./speech.js');
-                try {
-                    await initSpeechModel();
-                } catch {
-                    await modal().alert('Sprachmodell konnte nicht geladen werden. Bitte erneut aktivieren.');
-                    this.speechEnabled = false;
-                    localStorage.removeItem('speechEnabled');
-                    return;
-                }
+            // Show loading state while initializing
+            this.speechLoading = true;
+            this.speechProgress = 0;
+            try {
+                await initSpeechModel((progress) => {
+                    this.speechProgress = Math.round(progress * 100);
+                });
+            } catch {
+                this.speechLoading = false;
+                this.speechProgress = 0;
+                await modal().alert('Sprachmodell konnte nicht geladen werden. Bitte erneut aktivieren.');
+                this.speechEnabled = false;
+                localStorage.removeItem('speechEnabled');
+                return;
             }
+            this.speechLoading = false;
+            this.speechProgress = 0;
 
             await startListening(
                 (text) => this._onSpeechResult(text),
@@ -1248,19 +1305,98 @@ const store = reactive({
                     this.editingRecipe.name = text;
                 }
                 break;
+            case 'description':
+                if (this.editingRecipe) {
+                    // Append to existing description with space/newline
+                    const current = this.editingRecipe.description || '';
+                    this.editingRecipe.description = current
+                        ? current + '\n' + text
+                        : text;
+                }
+                break;
             case 'ingredient':
                 if (this.editingRecipe) {
-                    // Add as new ingredient with recognized text as name
-                    this.editingRecipe.ingredients.push({
-                        name: text,
-                        amount: '',
-                        unit: ''
-                    });
+                    // Smart parse: "Tomaten fünf Stück" → name, amount, unit
+                    const parsed = this._parseIngredient(text);
+                    this.editingRecipe.ingredients.push(parsed);
                 }
                 break;
         }
 
         this.speechPartial = '';
+    },
+
+    /**
+     * Parse spoken ingredient into name, amount, unit
+     * Handles patterns like: "Tomaten fünf Stück", "500 Gramm Mehl", "eine Zwiebel"
+     */
+    _parseIngredient(text) {
+        // German number words to digits
+        const numberWords = {
+            'null': 0, 'ein': 1, 'eine': 1, 'einer': 1, 'einen': 1, 'eins': 1,
+            'zwei': 2, 'zwo': 2, 'drei': 3, 'vier': 4, 'fünf': 5,
+            'sechs': 6, 'sieben': 7, 'acht': 8, 'neun': 9, 'zehn': 10,
+            'elf': 11, 'zwölf': 12, 'dreizehn': 13, 'vierzehn': 14, 'fünfzehn': 15,
+            'zwanzig': 20, 'dreißig': 30, 'vierzig': 40, 'fünfzig': 50,
+            'hundert': 100, 'halbe': 0.5, 'halbes': 0.5, 'halben': 0.5,
+            'einhalb': 1.5, 'anderthalb': 1.5, 'viertel': 0.25
+        };
+
+        // Common units
+        const units = [
+            'stück', 'stk', 'gramm', 'g', 'kilogramm', 'kg', 'kilo',
+            'liter', 'l', 'milliliter', 'ml', 'deziliter', 'dl',
+            'teelöffel', 'tl', 'esslöffel', 'el', 'löffel',
+            'tasse', 'tassen', 'becher', 'dose', 'dosen', 'glas', 'gläser',
+            'prise', 'prisen', 'bund', 'bunde', 'scheibe', 'scheiben',
+            'packung', 'packungen', 'päckchen', 'pkg', 'pck'
+        ];
+
+        const words = text.toLowerCase().split(/\s+/);
+        let amount = '';
+        let unit = '';
+        let nameWords = [];
+        let foundNumber = false;
+        let foundUnit = false;
+
+        for (let i = 0; i < words.length; i++) {
+            const word = words[i];
+
+            // Check for number (digit or word)
+            if (!foundNumber) {
+                // Digit number
+                const numMatch = word.match(/^(\d+(?:[.,]\d+)?)$/);
+                if (numMatch) {
+                    amount = numMatch[1].replace(',', '.');
+                    foundNumber = true;
+                    continue;
+                }
+                // Number word
+                if (numberWords[word] !== undefined) {
+                    amount = numberWords[word].toString();
+                    foundNumber = true;
+                    continue;
+                }
+            }
+
+            // Check for unit
+            if (!foundUnit && units.includes(word)) {
+                unit = word.charAt(0).toUpperCase() + word.slice(1);
+                foundUnit = true;
+                continue;
+            }
+
+            // Everything else is the name
+            nameWords.push(word);
+        }
+
+        // Capitalize first letter of name
+        let name = nameWords.join(' ');
+        if (name) {
+            name = name.charAt(0).toUpperCase() + name.slice(1);
+        }
+
+        return { name, amount, unit };
     },
 
     async _stopSpeech() {
@@ -1378,46 +1514,23 @@ window.addEventListener('beforeinstallprompt', (e) => {
 // Welcome page: Install and start
 store.installAndStart = async function() {
     if (isIOS) {
-        // iOS: Show instructions, then go to app
-        await modal().custom({
-            title: 'App installieren',
-            html: `
-                <p><strong>So installierst du auf iOS:</strong></p>
-                <ol style="margin: 0.5rem 0; padding-left: 1.5rem;">
-                    <li>Tippe auf das Teilen-Symbol <span style="font-size: 1.1em;">&#9094;</span></li>
-                    <li>Scrolle und wähle "Zum Home-Bildschirm"</li>
-                </ol>
-            `,
-            confirmText: 'Verstanden',
-            showCancel: false
-        });
-        localStorage.setItem('welcomeSkipped', 'true');
-        store.activePage = 1;
-        history.replaceState(null, '', '#plan');
+        await showIOSInstallInstructions();
+        goToApp();
     } else if (deferredInstallPrompt) {
-        // Android/Desktop: Trigger native install prompt
         deferredInstallPrompt.prompt();
         const { outcome } = await deferredInstallPrompt.userChoice;
         if (outcome === 'accepted') {
             deferredInstallPrompt = null;
         }
-        // Go to app regardless of outcome
-        localStorage.setItem('welcomeSkipped', 'true');
-        store.activePage = 1;
-        history.replaceState(null, '', '#plan');
+        goToApp();
     } else {
-        // No install prompt available, just go to app
-        localStorage.setItem('welcomeSkipped', 'true');
-        store.activePage = 1;
-        history.replaceState(null, '', '#plan');
+        goToApp();
     }
 };
 
 // Welcome page: Skip install
 store.skipInstall = function() {
-    localStorage.setItem('welcomeSkipped', 'true');
-    store.activePage = 1;
-    history.replaceState(null, '', '#plan');
+    goToApp();
 };
 
 // Manual install function for Settings page
@@ -1428,18 +1541,7 @@ window.installApp = async function() {
     }
 
     if (isIOS) {
-        await modal().custom({
-            title: 'App installieren',
-            html: `
-                <p><strong>So installierst du auf iOS:</strong></p>
-                <ol style="margin: 0.5rem 0; padding-left: 1.5rem;">
-                    <li>Tippe auf das Teilen-Symbol <span style="font-size: 1.1em;">&#9094;</span></li>
-                    <li>Scrolle und wähle "Zum Home-Bildschirm"</li>
-                </ol>
-            `,
-            confirmText: 'Verstanden',
-            showCancel: false
-        });
+        await showIOSInstallInstructions();
         return;
     }
 
