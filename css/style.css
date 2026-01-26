@@ -228,31 +228,50 @@ html {
         margin-bottom: 1rem;
 
         h2 {
-            margin-bottom: 2rem;
+            margin-bottom: 0;
+            flex: 1;
         }
 
         .page-header-actions {
             display: flex;
             gap: 0.5rem;
+            align-items: center;
 
-            button {
+            .btn-icon {
+                width: 44px;
+                height: 44px;
+                padding: 0;
                 display: flex;
                 align-items: center;
-                gap: 0.35rem;
-                white-space: nowrap;
+                justify-content: center;
+                border-radius: 50%;
+                background: transparent;
+                border: none;
+                color: #f4f4f4;
+                cursor: pointer;
+
+                &:hover {
+                    background: var(--pico-muted-border-color);
+                }
+
+                &.active {
+                    background: var(--pico-primary-background);
+                    color: var(--pico-primary-inverse);
+                }
+
+                svg {
+                    width: 24px;
+                    height: 24px;
+                }
             }
         }
+    }
 
-        @media (max-width: 500px) {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 0.75rem;
-            text-align: center;
-
-            .page-header-actions {
-                flex-direction: column;
-            }
-        }
+    /* Share popup options */
+    .share-options {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
     }
 
     /* ==========================================
@@ -401,6 +420,17 @@ html {
         }
     }
 
+    .weekplan-grid + .coffee-section {
+        text-align: center;
+        margin-top: 9rem;
+        padding: 1.5rem;
+        color: var(--pico-muted-color);
+
+        #buymeacoffee img {
+            width: 130px;
+        }
+    }
+
     .create-weekplan {
         margin-top: 1.5rem;
         width: 100%;
@@ -410,26 +440,20 @@ html {
        Shopping List
        ========================================== */
 
-    /* Edit mode visibility - hidden by default, shown when .shopping-edit-mode is present */
-    .shopping-add {
-        display: none;
-    }
-
-    .page:has(.shopping-edit-mode) .shopping-add {
-        display: block;
-    }
-
-    .shopping-list .item .drag-handle,
+    /* Edit mode visibility for item actions */
     .shopping-list .item .item-actions {
         display: none !important;
     }
 
-    .shopping-edit-mode .shopping-list .item .drag-handle {
-        display: inline !important;
-    }
-
     .shopping-edit-mode .shopping-list .item .item-actions {
         display: flex !important;
+    }
+
+    .shopping-hint {
+        display: block;
+        text-align: center;
+        color: var(--pico-muted-color);
+        margin-bottom: 0.75rem;
     }
 
     .shopping-add {
@@ -467,15 +491,6 @@ html {
                 margin: 0;
             }
 
-            .drag-handle {
-                cursor: grab;
-                color: var(--pico-muted-color);
-                font-size: 1rem;
-                user-select: none;
-                touch-action: none;
-                padding: 0.25rem;
-            }
-
             .ingredient-info {
                 flex: 1;
                 cursor: default;
@@ -498,6 +513,8 @@ html {
             }
 
             .btn-icon {
+                width: 44px;
+                height: 44px;
                 background: none;
                 border: none;
                 padding: 0.25rem 0.4rem;
@@ -690,6 +707,10 @@ html {
                 --pico-background-color: var(--pico-del-color);
                 --pico-border-color: var(--pico-del-color);
             }
+        }
+
+        #buymeacoffee {
+            width: 200px;
         }
     }
 

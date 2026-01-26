@@ -219,11 +219,18 @@ const store = reactive({
 
     async loadRecipes() {
         // When sync is enabled, load from sync manager to stay consistent
+        let recipes;
         if (window.syncManager?.isInitialized) {
-            this.recipes = window.syncManager.getRecipes();
+            recipes = window.syncManager.getRecipes();
         } else {
-            this.recipes = await getAllRecipes();
+            recipes = await getAllRecipes();
         }
+        // Sort by creation date (newest first)
+        this.recipes = recipes.sort((a, b) => {
+            const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+            const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+            return dateB - dateA;
+        });
     },
 
     async exportRecipes() {
@@ -760,13 +767,13 @@ const store = reactive({
 
     startEditItem(index) {
         const item = this.shoppingList[index];
-        // Set values first
-        this.editingShoppingText = item.name;
-        this.editingShoppingAmount = item.amount || '';
-        this.editingShoppingUnit = item.unit || '';
-        // Delay index change to next frame so values are applied before template switch
+        // Set index first to show the edit template
+        this.editingShoppingIndex = index;
+        // Then populate values on next frame after inputs exist in DOM
         requestAnimationFrame(() => {
-            this.editingShoppingIndex = index;
+            this.editingShoppingText = item.name;
+            this.editingShoppingAmount = item.amount || '';
+            this.editingShoppingUnit = item.unit || '';
         });
     },
 
@@ -934,6 +941,104 @@ const store = reactive({
         } catch {
             await modal().alert(text);
         }
+    },
+
+    async shareWeekplan() {
+        if (!this.weekplan) {
+            await modal().alert('Kein Wochenplan zum Teilen!');
+            return;
+        }
+
+        let text = '📅 Wochenplan\n\n';
+        for (const day of this.weekplan.days) {
+            const recipe = this.getRecipeById(day.recipeId);
+            const recipeName = recipe?.name || '—';
+            text += `${day.dayName}: ${recipeName}\n`;
+        }
+        text += '\n— Erstellt mit Kochplaner';
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: 'Wochenplan', text });
+                return;
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            await modal().alert('In Zwischenablage kopiert!');
+        } catch {
+            await modal().alert(text);
+        }
+    },
+
+    async shareApp() {
+        const url = window.location.origin + window.location.pathname;
+        const text = '🍳 Kochplaner - Dein Wochenplaner fürs Kochen!\n\n' + url;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Kochplaner',
+                    text: '🍳 Kochplaner - Dein Wochenplaner fürs Kochen!',
+                    url
+                });
+                return;
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            await modal().alert('Link in Zwischenablage kopiert!');
+        } catch {
+            await modal().alert(text);
+        }
+    },
+
+    async showSharePopup() {
+        await modal().custom({
+            title: 'Teilen',
+            html: `
+                <div class="share-options">
+                    <button class="primary mt-2" data-action="weekplan">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M17 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H7V1H9V3H15V1H17V3ZM4 9V19H20V9H4ZM6 11H8V13H6V11ZM6 15H8V17H6V15ZM10 11H18V13H10V11ZM10 15H15V17H10V15Z"></path></svg>
+                        <span>Wochenplan teilen</span>
+                    </button>
+                    <button class="secondary mt-2" data-action="shopping">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M4.00436 6.41686L0.761719 3.17422L2.17593 1.76001L5.41857 5.00265H20.6603C21.2126 5.00265 21.6603 5.45037 21.6603 6.00265C21.6603 6.09997 21.6461 6.19678 21.6182 6.29L19.2182 14.29C19.0913 14.713 18.7019 15.0027 18.2603 15.0027H6.00436V17.0027H17.0044V19.0027H5.00436C4.45207 19.0027 4.00436 18.5549 4.00436 18.0027V6.41686ZM6.00436 7.00265V13.0027H17.5163L19.3163 7.00265H6.00436ZM5.50436 23.0027C4.67593 23.0027 4.00436 22.3311 4.00436 21.5027C4.00436 20.6742 4.67593 20.0027 5.50436 20.0027C6.33279 20.0027 7.00436 20.6742 7.00436 21.5027C7.00436 22.3311 6.33279 23.0027 5.50436 23.0027ZM17.5044 23.0027C16.6759 23.0027 16.0044 22.3311 16.0044 21.5027C16.0044 20.6742 16.6759 20.0027 17.5044 20.0027C18.3328 20.0027 19.0044 20.6742 19.0044 21.5027C19.0044 22.3311 18.3328 23.0027 17.5044 23.0027Z"></path></svg>
+                        <span>Einkaufsliste teilen</span>
+                    </button>
+                    <button class="contrast mt-2 mb-2" data-action="app">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M12 1L21.5 6.5V17.5L12 23L2.5 17.5V6.5L12 1ZM12 3.311L4.5 7.65311V16.3469L12 20.689L19.5 16.3469V7.65311L12 3.311ZM12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12C16 14.2091 14.2091 16 12 16ZM12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z"></path></svg>
+                        <span>App teilen</span>
+                    </button>
+                </div>
+            `,
+            showTitle: false,
+            showConfirm: false,
+            showCancel: true,
+            cancelText: 'Abbrechen'
+        });
+
+        // Handle button clicks via event delegation
+        const shareModal = $id('appModal');
+        const handleClick = async (e) => {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+
+            shareModal.close();
+            shareModal.removeEventListener('click', handleClick);
+
+            const action = btn.dataset.action;
+            if (action === 'weekplan') await this.shareWeekplan();
+            else if (action === 'shopping') await this.shareShoppingList();
+            else if (action === 'app') await this.shareApp();
+        };
+        shareModal.addEventListener('click', handleClick);
     },
 
     // === THEME ===

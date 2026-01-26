@@ -78,19 +78,22 @@ class ModalComponent extends HTMLElement {
     /**
      * Show custom dialog with HTML content
      */
-    custom({ title, html = '', confirmText = 'OK', cancelText = 'Abbrechen', showCancel = true }) {
+    custom({ title, html = '', confirmText = 'OK', cancelText = 'Abbrechen', showCancel = true, showConfirm = true, showTitle = true }) {
         const messageEl = this.querySelector('.modal-message');
         const descriptionEl = this.querySelector('.modal-description');
         const cancelBtn = this.querySelector('.modal-cancel');
         const confirmBtn = this.querySelector('.modal-confirm');
 
         messageEl.textContent = title;
+        messageEl.style.display = showTitle ? 'inline-block' : 'none';
+        
         descriptionEl.innerHTML = html;
         descriptionEl.style.display = html ? 'block' : 'none';
 
         cancelBtn.textContent = cancelText;
         cancelBtn.style.display = showCancel ? 'inline-block' : 'none';
         confirmBtn.textContent = confirmText;
+        confirmBtn.style.display = showConfirm ? 'inline-block' : 'none';
 
         this.classList.add('show');
         confirmBtn.focus();
