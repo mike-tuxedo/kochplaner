@@ -160,7 +160,7 @@ html {
             top: 0;
             left: 0;
             right: 0;
-            height: 40px;
+            height: 80px;
             cursor: grab;
             display: flex;
             align-items: center;
@@ -181,7 +181,7 @@ html {
             bottom: 0;
             left: 0;
             right: 0;
-            max-height: 85vh;
+            max-height: 100vh;
             display: flex;
             flex-direction: column;
             background: var(--pico-background-color);
@@ -198,6 +198,9 @@ html {
             margin-top: 40px;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            * {
+                user-select: none;
+            }
 
             h3 {
                 margin-bottom: 1rem;
@@ -373,7 +376,6 @@ html {
        Weekplan Grid
        ========================================== */
     .weekplan-grid {
-        display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 
         .day-slot {
@@ -420,7 +422,7 @@ html {
         }
     }
 
-    .weekplan-grid + .coffee-section {
+    .coffee-section {
         text-align: center;
         margin-top: 9rem;
         padding: 1.5rem;
@@ -456,6 +458,23 @@ html {
         margin-bottom: 0.75rem;
     }
 
+    .shopping-empty-hint {
+        text-align: center;
+        padding: 1.5rem 1rem;
+        color: var(--pico-muted-color);
+
+        p:first-child {
+            font-weight: 600;
+            color: var(--pico-color);
+            margin-bottom: 0.25rem;
+        }
+
+        p:last-child {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+        }
+    }
+
     .shopping-add {
         margin-bottom: 1rem;
 
@@ -477,6 +496,23 @@ html {
 
     .shopping-list {
         text-align: left;
+        position: relative;
+
+        .separator {
+            height: 3px;
+            background: var(--pico-primary);
+            opacity: 0;
+            transition: opacity 0.15s;
+            margin: 0 0.75rem;
+
+            &.active {
+                opacity: 1;
+            }
+        }
+
+        .item-wrapper {
+            position: relative;
+        }
 
         .item {
             display: flex;
@@ -578,841 +614,844 @@ html {
             }
         }
     }
+}
 
-    /* ==========================================
-       Recipe Form
-       ========================================== */
-    .recipe-form {
-        text-align: left;
+/* ==========================================
+   Recipe Form
+   ========================================== */
+.recipe-form {
+    text-align: left;
 
-        .ingredients-list {
-            border: 1px solid var(--pico-muted-border-color);
-            border-radius: var(--pico-border-radius);
-            padding: 1rem;
+    .ingredients-list {
+        border: 1px solid var(--pico-muted-border-color);
+        border-radius: var(--pico-border-radius);
+        padding: 1rem;
+        margin-bottom: 1rem;
+
+        .ingredient-row-outer {
+            display: grid;
+            grid-template-columns: 1fr 50px;
+            gap: 1rem;
+            border-bottom: 1px solid var(--pico-muted-border-color);
             margin-bottom: 1rem;
 
-            .ingredient-row-outer {
+            .ingredient-row-inner {
                 display: grid;
-                grid-template-columns: 1fr 50px;
-                gap: 1rem;
-                border-bottom: 1px solid var(--pico-muted-border-color);
-                margin-bottom: 1rem;
+                grid-template-columns: 2fr 1fr 1fr auto;
+                gap: 0.5rem;
+                align-items: center;
 
-                .ingredient-row-inner {
-                    display: grid;
-                    grid-template-columns: 2fr 1fr 1fr auto;
-                    gap: 0.5rem;
-                    align-items: center;
+                @media (max-width: 500px) {
+                    grid-template-columns: 1fr 1fr;
 
-                    @media (max-width: 500px) {
-                        grid-template-columns: 1fr 1fr;
-
-                        input:first-child {
-                            grid-column: 1 / -1;
-                        }
+                    input:first-child {
+                        grid-column: 1 / -1;
                     }
                 }
+            }
 
-                .ingredient-delete {
-                    height: 44px;
+            .ingredient-delete {
+                height: 44px;
+            }
+        }
+    }
+
+    .add-ingredient-btn {
+        width: 100%;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+
+        button:first-child {
+            margin-right: auto;
+        }
+    }
+
+    .recipe-photo-upload {
+        margin-bottom: 1rem;
+
+        .photo-preview {
+            position: relative;
+            display: inline-block;
+            max-width: 200px;
+
+            img {
+                width: 100%;
+                height: auto;
+                border-radius: var(--pico-border-radius);
+                border: 1px solid var(--pico-muted-border-color);
+            }
+
+            .photo-remove {
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                width: 28px;
+                height: 28px;
+                padding: 0;
+                border-radius: 50%;
+                font-size: 1.2rem;
+                line-height: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        .photo-upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+    }
+}
+
+/* ==========================================
+   Empty State
+   ========================================== */
+.empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--pico-muted-color);
+}
+
+/* ==========================================
+   Settings
+   ========================================== */
+.settings-section {
+    text-align: left;
+    margin-bottom: 1rem;
+
+    h4 {
+        margin-bottom: 0.5rem;
+    }
+
+    &.danger-zone {
+        border: 1px solid var(--pico-del-color);
+        border-radius: var(--pico-border-radius);
+        padding: 1rem;
+
+        h4 {
+            color: var(--pico-del-color);
+        }
+
+        button {
+            --pico-background-color: var(--pico-del-color);
+            --pico-border-color: var(--pico-del-color);
+        }
+    }
+
+    #buymeacoffee {
+        width: 200px;
+    }
+}
+
+.settings-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+
+    label[role="button"] {
+        cursor: pointer;
+        margin: 0;
+    }
+}
+
+.sync-setup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    button {
+        width: 100%;
+    }
+}
+
+.sync-import {
+    p {
+        color: var(--pico-muted-color);
+        margin-bottom: 1rem;
+    }
+}
+
+.sync-status {
+    margin-bottom: 1rem;
+}
+
+.status-connected {
+    color: var(--pico-ins-color);
+}
+
+.status-disconnected {
+    color: var(--pico-muted-color);
+}
+
+.sync-error {
+    color: var(--pico-del-color);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+.sync-scanner {
+    .scanner-container {
+        position: relative;
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto 1rem;
+        border-radius: var(--pico-border-radius);
+        overflow: hidden;
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .scanner-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 60%;
+            height: 60%;
+            transform: translate(-50%, -50%);
+            border: 2px solid var(--pico-primary);
+            border-radius: 8px;
+            pointer-events: none;
+        }
+    }
+}
+
+.sync-share {
+    text-align: center;
+
+    .qr-display {
+        margin-bottom: 1rem;
+
+        canvas {
+            border-radius: var(--pico-border-radius);
+            border: 1px solid var(--pico-muted-border-color);
+        }
+    }
+
+    .sync-key-display {
+        display: flex;
+        align-items: stretch;
+        margin-bottom: 1rem;
+        background: var(--pico-card-background-color);
+        border: 1px solid var(--pico-muted-border-color);
+        border-radius: var(--pico-border-radius);
+
+        .sync-key-text {
+            flex: 1;
+            display: block;
+            padding: 0.75rem;
+            font-size: 1rem;
+            word-break: break-all;
+            user-select: all;
+            background: transparent;
+            border: none;
+        }
+
+        .sync-key-copy {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 0.75rem;
+            margin: 0;
+            background: transparent;
+            border: none;
+            border-left: 1px solid var(--pico-muted-border-color);
+            border-radius: 0;
+            cursor: pointer;
+            color: var(--pico-muted-color);
+            transition: background 0.2s, color 0.2s;
+
+            &:hover {
+                background: var(--pico-muted-border-color);
+                color: var(--pico-color);
+            }
+        }
+    }
+}
+
+.input-group {
+    margin-bottom: 1rem;
+
+    label {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: 0.875rem;
+    }
+
+    input {
+        margin-bottom: 0;
+    }
+}
+
+/* ==========================================
+   Welcome Page
+   ========================================== */
+.page-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 4rem !important;
+
+    section {
+        margin-bottom: 10rem;
+    }
+
+    .welcome-page-stage {
+        width: 100%;
+        max-width: 800px;
+        text-align: center;
+
+        .welcome-icon {
+            margin-bottom: 1.5rem;
+
+            img {
+                width: 100px;
+                height: 100px;
+                border-radius: 20px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            }
+        }
+
+        h1 {
+            margin-bottom: 1rem;
+            color: var(--pico-primary);
+        }
+
+        .welcome-tagline {
+            color: var(--pico-muted-color);
+            margin-bottom: 4rem;
+        }
+
+        .welcome-stage {
+            gap: 4rem;
+            align-items: center;
+            padding-bottom: 5rem;
+        }
+
+        .welcome-features {
+            text-align: left;
+            margin-bottom: 2rem;
+
+            .feature {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.5rem 0;
+                border-bottom: 1px solid var(--pico-muted-border-color);
+
+                &:last-child {
+                    border-bottom: none;
+                }
+
+                .feature-icon {
+                    font-size: 1.25rem;
+                    width: 2rem;
+                    text-align: center;
                 }
             }
         }
 
-        .add-ingredient-btn {
-            width: 100%;
-            margin-bottom: 1.5rem;
-        }
-
-        .form-actions {
+        .welcome-actions {
             display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
+            flex-direction: column;
+            gap: 1.5rem;
 
-            button:first-child {
-                margin-right: auto;
+            button {
+                width: 100%;
+                margin: 0;
+            }
+
+            .welcome-btn-primary {
+                font-weight: 600;
+            }
+
+            .welcome-btn-secondary {
+                background: transparent;
             }
         }
 
-        .recipe-photo-upload {
-            margin-bottom: 1rem;
+        .welcome-hint {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--pico-card-background-color);
+            border-radius: var(--pico-border-radius);
+            color: var(--pico-muted-color);
+        }
 
-            .photo-preview {
-                position: relative;
-                display: inline-block;
-                max-width: 200px;
+        .welcome-closing-content {
+            max-width: 800px;
+        }
+
+        .showmore {
+            position: absolute;
+            animation: bounce 1.5s ease-in-out infinite;
+            text-decoration: none;
+
+            svg {
+                width: 32px;
+            }
+        }
+    }
+
+    .welcome-page-features {
+        max-width: 1200px;
+
+        #features {
+            visibility: hidden;
+            translate: 0 -100px;
+        }
+
+        h2 {
+            margin-bottom: 4rem;
+            color: var(--pico-primary);
+        }
+
+        .feature-teaser {
+            display: flex;
+            align-items: center;
+            gap: 4rem;
+            margin-bottom: 6rem;
+
+            @media (min-width: 845px) {
+                gap: 10rem;
+            }
+
+            &.reverse {
+                flex-direction: row-reverse;
+            }
+
+            .feature-teaser-image {
+                flex: 0 0 40%;
 
                 img {
                     width: 100%;
                     height: auto;
                     border-radius: var(--pico-border-radius);
-                    border: 1px solid var(--pico-muted-border-color);
-                }
-
-                .photo-remove {
-                    position: absolute;
-                    top: -8px;
-                    right: -8px;
-                    width: 28px;
-                    height: 28px;
-                    padding: 0;
-                    border-radius: 50%;
-                    font-size: 1.2rem;
-                    line-height: 1;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
+                    max-height: 20vw;
                 }
             }
 
-            .photo-upload-btn {
-                display: inline-flex;
-                align-items: center;
-                gap: 0.5rem;
-                cursor: pointer;
-            }
-        }
-    }
-
-    /* ==========================================
-       Empty State
-       ========================================== */
-    .empty-state {
-        text-align: center;
-        padding: 2rem 1rem;
-        color: var(--pico-muted-color);
-    }
-
-    /* ==========================================
-       Settings
-       ========================================== */
-    .settings-section {
-        text-align: left;
-        margin-bottom: 1rem;
-
-        h4 {
-            margin-bottom: 0.5rem;
-        }
-
-        &.danger-zone {
-            border: 1px solid var(--pico-del-color);
-            border-radius: var(--pico-border-radius);
-            padding: 1rem;
-
-            h4 {
-                color: var(--pico-del-color);
-            }
-
-            button {
-                --pico-background-color: var(--pico-del-color);
-                --pico-border-color: var(--pico-del-color);
-            }
-        }
-
-        #buymeacoffee {
-            width: 200px;
-        }
-    }
-
-    .settings-actions {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-
-        label[role="button"] {
-            cursor: pointer;
-            margin: 0;
-        }
-    }
-
-    .sync-setup {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-
-        button {
-            width: 100%;
-        }
-    }
-
-    .sync-import {
-        p {
-            color: var(--pico-muted-color);
-            margin-bottom: 1rem;
-        }
-    }
-
-    .sync-status {
-        margin-bottom: 1rem;
-    }
-
-    .status-connected {
-        color: var(--pico-ins-color);
-    }
-
-    .status-disconnected {
-        color: var(--pico-muted-color);
-    }
-
-    .sync-error {
-        color: var(--pico-del-color);
-        font-size: 0.875rem;
-        margin-bottom: 1rem;
-    }
-
-    .sync-scanner {
-        .scanner-container {
-            position: relative;
-            width: 100%;
-            max-width: 300px;
-            margin: 0 auto 1rem;
-            border-radius: var(--pico-border-radius);
-            overflow: hidden;
-
-            video {
-                width: 100%;
-                height: auto;
-                display: block;
-            }
-
-            .scanner-overlay {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                width: 60%;
-                height: 60%;
-                transform: translate(-50%, -50%);
-                border: 2px solid var(--pico-primary);
-                border-radius: 8px;
-                pointer-events: none;
-            }
-        }
-    }
-
-    .sync-share {
-        text-align: center;
-
-        .qr-display {
-            margin-bottom: 1rem;
-
-            canvas {
-                border-radius: var(--pico-border-radius);
-                border: 1px solid var(--pico-muted-border-color);
-            }
-        }
-
-        .sync-key-display {
-            display: flex;
-            align-items: stretch;
-            margin-bottom: 1rem;
-            background: var(--pico-card-background-color);
-            border: 1px solid var(--pico-muted-border-color);
-            border-radius: var(--pico-border-radius);
-
-            .sync-key-text {
+            .feature-teaser-content {
                 flex: 1;
-                display: block;
-                padding: 0.75rem;
-                font-size: 1rem;
-                word-break: break-all;
-                user-select: all;
-                background: transparent;
-                border: none;
-            }
 
-            .sync-key-copy {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 0.5rem 0.75rem;
-                margin: 0;
-                background: transparent;
-                border: none;
-                border-left: 1px solid var(--pico-muted-border-color);
-                border-radius: 0;
-                cursor: pointer;
-                color: var(--pico-muted-color);
-                transition: background 0.2s, color 0.2s;
+                h3 {
+                    margin-bottom: 0.5rem;
+                    color: var(--pico-primary);
+                }
 
-                &:hover {
-                    background: var(--pico-muted-border-color);
-                    color: var(--pico-color);
+                p {
+                    color: var(--pico-muted-color);
+                    line-height: 1.6;
                 }
             }
         }
-    }
 
-    .input-group {
-        margin-bottom: 1rem;
+        @media (max-width: 768px) {
 
-        label {
-            display: block;
-            margin-bottom: 0.25rem;
-            font-size: 0.875rem;
-        }
-
-        input {
-            margin-bottom: 0;
-        }
-    }
-
-    /* ==========================================
-       Welcome Page
-       ========================================== */
-    .page-welcome {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding-top: 4rem !important;
-
-        section {
-            margin-bottom: 10rem;
-        }
-
-        .welcome-page-stage {
-            width: 100%;
-            max-width: 800px;
-            text-align: center;
-
-            .welcome-icon {
-                margin-bottom: 1.5rem;
-
-                img {
-                    width: 100px;
-                    height: 100px;
-                    border-radius: 20px;
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-                }
-            }
-
-            h1 {
-                margin-bottom: 1rem;
-                color: var(--pico-primary);
-            }
-
-            .welcome-tagline {
-                color: var(--pico-muted-color);
-                margin-bottom: 4rem;
-            }
-
-            .welcome-stage {
-                gap: 4rem;
-                align-items: center;
-                padding-bottom: 5rem;
-            }
-
-            .welcome-features {
-                text-align: left;
-                margin-bottom: 2rem;
-
-                .feature {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.75rem;
-                    padding: 0.5rem 0;
-                    border-bottom: 1px solid var(--pico-muted-border-color);
-
-                    &:last-child {
-                        border-bottom: none;
-                    }
-
-                    .feature-icon {
-                        font-size: 1.25rem;
-                        width: 2rem;
-                        text-align: center;
-                    }
-                }
-            }
-
-            .welcome-actions {
-                display: flex;
+            .feature-teaser,
+            .feature-teaser.reverse {
                 flex-direction: column;
-                gap: 1.5rem;
-
-                button {
-                    width: 100%;
-                    margin: 0;
-                }
-
-                .welcome-btn-primary {
-                    font-weight: 600;
-                }
-
-                .welcome-btn-secondary {
-                    background: transparent;
-                }
-            }
-
-            .welcome-hint {
-                margin-top: 1.5rem;
-                padding: 1rem;
-                background: var(--pico-card-background-color);
-                border-radius: var(--pico-border-radius);
-                color: var(--pico-muted-color);
-            }
-
-            .welcome-closing-content {
-                max-width: 800px;
-            }
-
-            .showmore {
-                position: absolute;
-                animation: bounce 1.5s ease-in-out infinite;
-                text-decoration: none;
-
-                svg {
-                    width: 32px;
-                }
-            }
-        }
-
-        .welcome-page-features {
-            max-width: 1200px;
-
-            #features {
-                visibility: hidden;
-                translate: 0 -100px;
-            }
-
-            h2 {
-                margin-bottom: 4rem;
-                color: var(--pico-primary);
-            }
-
-            .feature-teaser {
-                display: flex;
-                align-items: center;
-                gap: 4rem;
-                margin-bottom: 6rem;
-
-                @media (min-width: 845px) {
-                    gap: 10rem;
-                }
-
-                &.reverse {
-                    flex-direction: row-reverse;
-                }
+                text-align: center;
 
                 .feature-teaser-image {
-                    flex: 0 0 40%;
-
-                    img {
-                        width: 100%;
-                        height: auto;
-                        border-radius: var(--pico-border-radius);
-                        max-height: 20vw;
-                    }
-                }
-
-                .feature-teaser-content {
-                    flex: 1;
-
-                    h3 {
-                        margin-bottom: 0.5rem;
-                        color: var(--pico-primary);
-                    }
-
-                    p {
-                        color: var(--pico-muted-color);
-                        line-height: 1.6;
-                    }
-                }
-            }
-
-            @media (max-width: 768px) {
-
-                .feature-teaser,
-                .feature-teaser.reverse {
-                    flex-direction: column;
-                    text-align: center;
-
-                    .feature-teaser-image {
-                        flex: 0 0 auto;
-                        max-width: 300px;
-                        margin: 0 auto;
-                    }
+                    flex: 0 0 auto;
+                    max-width: 300px;
+                    margin: 0 auto;
                 }
             }
         }
     }
+}
 
-    /* ==========================================
-       Drawer Recipe List
-       ========================================== */
-    .drawer-recipe-list {
-        .drawer-recipe-item {
-            padding: 0.75rem;
-            border: 1px solid var(--pico-muted-border-color);
-            border-radius: var(--pico-border-radius);
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-            transition: background 0.2s, border-color 0.2s;
+/* ==========================================
+   Drawer Recipe List
+   ========================================== */
+.drawer-recipe-list {
+    .drawer-recipe-item {
+        padding: 0.75rem;
+        border: 1px solid var(--pico-muted-border-color);
+        border-radius: var(--pico-border-radius);
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
 
-            &:hover {
-                background: var(--pico-card-background-color);
-                border-color: var(--pico-primary);
-            }
-        }
-    }
-
-    /* ==========================================
-       Suggestion Drawer
-       ========================================== */
-    .suggestion-loading {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 3rem 1rem;
-        color: var(--pico-muted-color);
-    }
-
-    .suggestion-content {
-        .suggestion-card {
+        &:hover {
             background: var(--pico-card-background-color);
-            border: 1px solid var(--pico-muted-border-color);
-            border-radius: var(--pico-border-radius);
-            padding: 1rem;
-            margin-bottom: 1rem;
+            border-color: var(--pico-primary);
+        }
+    }
+}
 
-            &.has-photo {
-                display: flex;
-                gap: 1rem;
-                padding: 0;
-                overflow: hidden;
+/* ==========================================
+   Suggestion Drawer
+   ========================================== */
+.suggestion-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    color: var(--pico-muted-color);
+}
+
+.suggestion-content {
+    .suggestion-card {
+        background: var(--pico-card-background-color);
+        border: 1px solid var(--pico-muted-border-color);
+        border-radius: var(--pico-border-radius);
+        padding: 1rem;
+        margin-bottom: 1rem;
+
+        &.has-photo {
+            display: flex;
+            gap: 1rem;
+            padding: 0;
+            overflow: hidden;
+
+            .suggestion-photo {
+                width: 140px;
+                height: 140px;
+                object-fit: cover;
+                flex-shrink: 0;
+            }
+
+            .suggestion-card-content {
+                padding: 1rem 1rem 1rem 0;
+                flex: 1;
+                min-width: 0;
+            }
+
+            @media (max-width: 500px) {
+                flex-direction: column;
 
                 .suggestion-photo {
-                    width: 140px;
-                    height: 140px;
-                    object-fit: cover;
-                    flex-shrink: 0;
+                    width: 100%;
+                    height: 180px;
                 }
 
                 .suggestion-card-content {
-                    padding: 1rem 1rem 1rem 0;
-                    flex: 1;
-                    min-width: 0;
-                }
-
-                @media (max-width: 500px) {
-                    flex-direction: column;
-
-                    .suggestion-photo {
-                        width: 100%;
-                        height: 180px;
-                    }
-
-                    .suggestion-card-content {
-                        padding: 0 1rem 1rem 1rem;
-                    }
+                    padding: 0 1rem 1rem 1rem;
                 }
             }
+        }
 
-            h4 {
-                margin: 0 0 0.5rem 0;
-                color: var(--pico-primary);
+        h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--pico-primary);
+        }
+
+        .suggestion-description {
+            color: var(--pico-muted-color);
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+
+        details summary {
+            color: var(--pico-muted-color);
+            font-size: 0.875rem;
+        }
+
+        .ingredients {
+            padding-left: 1rem;
+            margin: 0.5rem 0 0 0;
+
+            li {
+                margin-bottom: 0.25rem;
+            }
+        }
+    }
+
+    .suggestion-actions {
+        display: flex;
+        gap: 0.75rem;
+
+        button {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+        }
+    }
+}
+
+/* ==========================================
+   Modal Component
+   ========================================== */
+app-modal {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+
+    .modal-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(3px);
+    }
+
+    .modal-content {
+        position: relative;
+        background: var(--pico-card-background-color);
+        border: 1px solid var(--pico-muted-border-color);
+        border-radius: var(--pico-border-radius);
+        padding: 1.5rem;
+        max-width: 90%;
+        width: 400px;
+        transform: scale(0.9);
+        transition: transform 0.2s ease;
+    }
+
+    .modal-body {
+        margin-bottom: 1.5rem;
+
+        .modal-message {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-description {
+            color: var(--pico-muted-color);
+            margin-bottom: 0;
+
+            p {
+                margin-bottom: 0.5rem;
             }
 
-            .suggestion-description {
-                color: var(--pico-muted-color);
-                font-size: 0.9rem;
-                margin-bottom: 0.75rem;
-            }
-
-            details summary {
-                color: var(--pico-muted-color);
-                font-size: 0.875rem;
-            }
-
-            .ingredients {
-                padding-left: 1rem;
-                margin: 0.5rem 0 0 0;
+            ol,
+            ul {
+                margin: 0.5rem 0;
+                padding-left: 1.5rem;
 
                 li {
                     margin-bottom: 0.25rem;
                 }
             }
         }
+    }
 
-        .suggestion-actions {
-            display: flex;
-            gap: 0.75rem;
+    .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
 
-            button {
-                flex: 1;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 0.35rem;
-            }
+        button {
+            margin-bottom: 0;
         }
     }
 
-    /* ==========================================
-       Modal Component
-       ========================================== */
-    app-modal {
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 1100;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-
-        .modal-backdrop {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(3px);
-        }
+    &.show {
+        pointer-events: initial;
+        opacity: 1;
 
         .modal-content {
-            position: relative;
-            background: var(--pico-card-background-color);
-            border: 1px solid var(--pico-muted-border-color);
-            border-radius: var(--pico-border-radius);
-            padding: 1.5rem;
-            max-width: 90%;
-            width: 400px;
-            transform: scale(0.9);
-            transition: transform 0.2s ease;
-        }
-
-        .modal-body {
-            margin-bottom: 1.5rem;
-
-            .modal-message {
-                font-size: 1.1rem;
-                font-weight: 600;
-                margin-bottom: 0.5rem;
-            }
-
-            .modal-description {
-                color: var(--pico-muted-color);
-                margin-bottom: 0;
-
-                p {
-                    margin-bottom: 0.5rem;
-                }
-
-                ol,
-                ul {
-                    margin: 0.5rem 0;
-                    padding-left: 1.5rem;
-
-                    li {
-                        margin-bottom: 0.25rem;
-                    }
-                }
-            }
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: flex-end;
-
-            button {
-                margin-bottom: 0;
-            }
-        }
-
-        &.show {
-            pointer-events: initial;
-            opacity: 1;
-
-            .modal-content {
-                transform: scale(1);
-            }
+            transform: scale(1);
         }
     }
+}
 
-    /* ==========================================
-       Toast Notification
-       ========================================== */
-    .toast {
-        position: fixed;
-        bottom: 100px;
-        left: 50%;
-        transform: translateX(-50%) translateY(30px);
-        background: var(--pico-primary);
-        color: white;
-        padding: 0.75rem 1.5rem;
-        border-radius: var(--pico-border-radius);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        z-index: 2000;
-        font-size: 0.9rem;
+/* ==========================================
+   Toast Notification
+   ========================================== */
+.toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(30px);
+    background: var(--pico-primary);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--pico-border-radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 2000;
+    font-size: 0.9rem;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    &.show {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateX(-50%) translateY(0);
+        animation: toastIn 0.4s ease;
+    }
+}
+
+@keyframes toastIn {
+    from {
         opacity: 0;
-        visibility: hidden;
+        transform: translateX(-50%) translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* ==========================================
+   Speech Recognition
+   ========================================== */
+.mic-btn {
+    width: 50px;
+    padding: 0.5rem;
+    font-size: 1.1rem;
+    transition: background 0.2s;
+
+    &.active {
+        background: var(--pico-del-color);
+        border-color: var(--pico-del-color);
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    &.loading {
+        opacity: 0.6;
         pointer-events: none;
+        animation: pulse 1s ease-in-out infinite;
+    }
+}
 
-        &.show {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
-            transform: translateX(-50%) translateY(0);
-            animation: toastIn 0.4s ease;
-        }
+.speech-partial {
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+    font-style: italic;
+    padding: 0.25rem 0.5rem;
+    margin-top: -0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.speech-info {
+    color: var(--pico-muted-color);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.add-ingredient-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+
+    .add-ingredient-btn {
+        flex: 1;
+        margin-bottom: 0;
     }
 
-    @keyframes toastIn {
-        from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-    }
-
-    /* ==========================================
-       Speech Recognition
-       ========================================== */
     .mic-btn {
-        width: 50px;
-        padding: 0.5rem;
-        font-size: 1.1rem;
-        transition: background 0.2s;
+        margin-bottom: 0;
+    }
+}
 
-        &.active {
-            background: var(--pico-del-color);
-            border-color: var(--pico-del-color);
-            animation: pulse 1.5s ease-in-out infinite;
-        }
+.textarea-with-mic {
+    position: relative;
 
-        &.loading {
-            opacity: 0.6;
-            pointer-events: none;
-            animation: pulse 1s ease-in-out infinite;
-        }
+    textarea {
+        padding-right: 50px;
     }
 
-    .speech-partial {
-        font-size: 0.85rem;
-        color: var(--pico-muted-color);
-        font-style: italic;
-        padding: 0.25rem 0.5rem;
-        margin-top: -0.5rem;
-        margin-bottom: 0.5rem;
+    .textarea-mic {
+        position: absolute;
+        top: 0rem;
+        right: 0rem;
+        width: 44px;
+        height: 44px;
+        padding: 0.25rem;
+        font-size: 1rem;
+        border-top-right-radius: 12px;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 0;
+        border-top-left-radius: 0;
     }
+}
 
-    .speech-info {
-        color: var(--pico-muted-color);
-        font-size: 0.9rem;
-        margin-bottom: 1rem;
-    }
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
 
-    .add-ingredient-actions {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1.5rem;
+/* ==========================================
+   Helper Classes
+   ========================================== */
+.hide {
+    display: none !important;
+}
 
-        .add-ingredient-btn {
-            flex: 1;
-            margin-bottom: 0;
-        }
+/* Layout */
+.text-center {
+    text-align: center;
+}
 
-        .mic-btn {
-            margin-bottom: 0;
-        }
-    }
+.text-left {
+    text-align: left;
+}
 
-    .textarea-with-mic {
-        position: relative;
+.init-content-1 {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
 
-        textarea {
-            padding-right: 50px;
-        }
+.gap-1 {
+    gap: 1rem;
+}
 
-        .textarea-mic {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            width: 36px;
-            height: 36px;
-            padding: 0.25rem;
-            font-size: 1rem;
-            border-radius: 4px;
-        }
-    }
+.gap-2 {
+    gap: 2rem;
+}
 
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.6; }
-    }
+.mt-0 {
+    margin-top: 0rem;
+}
 
-    /* ==========================================
-       Helper Classes
-       ========================================== */
-    .hide {
-        display: none !important;
-    }
+.mb-0 {
+    margin-bottom: 0rem;
+}
 
-    /* Layout */
-    .text-center {
-        text-align: center;
-    }
+.mt-1 {
+    margin-top: 1rem;
+}
 
-    .text-left {
-        text-align: left;
-    }
+.mb-1 {
+    margin-bottom: 1rem;
+}
 
-    .init-content-1 {
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
-    }
+.mt-2 {
+    margin-top: 2rem;
+}
 
-    .gap-1 {
-        gap: 1rem;
-    }
+.mb-2 {
+    margin-bottom: 2rem;
+}
 
-    .gap-2 {
-        gap: 2rem;
-    }
+.btn-small {
+    padding: 0.2rem 0.5rem;
+}
 
-    .mt-0 {
-        margin-top: 0rem;
-    }
-
-    .mb-0 {
-        margin-bottom: 0rem;
-    }
-
-    .mt-1 {
-        margin-top: 1rem;
-    }
-
-    .mb-1 {
-        margin-bottom: 1rem;
-    }
-
-    .mt-2 {
-        margin-top: 2rem;
-    }
-
-    .mb-2 {
-        margin-bottom: 2rem;
-    }
-
-    .btn-small {
-        padding: 0.2rem 0.5rem;
-    }
-
-    /* Color */
-    .text-primary {
-        color: var(--pico-primary);
-    }
+/* Color */
+.text-primary {
+    color: var(--pico-primary);
 }
 
 /* ==========================================

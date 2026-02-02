@@ -100,7 +100,7 @@
                 Rezeptname
                 <div role="group">
                     <input type="text" v-model="editingRecipe.name" placeholder="z.B. Spaghetti Bolognese">
-                    <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'recipeName', loading: speechLoading }" @click="toggleSpeechListening('recipeName')" title="Spracheingabe">&#x1F3A4;</button>
+                    <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'recipeName', loading: speechLoading }" @click="toggleSpeechListening('recipeName')" title="Spracheingabe"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0001 3C10.3432 3 9.00008 4.34315 9.00008 6V12C9.00008 13.6569 10.3432 15 12.0001 15C13.6569 15 15.0001 13.6569 15.0001 12V6C15.0001 4.34315 13.6569 3 12.0001 3ZM12.0001 1C14.7615 1 17.0001 3.23858 17.0001 6V12C17.0001 14.7614 14.7615 17 12.0001 17C9.23865 17 7.00008 14.7614 7.00008 12V6C7.00008 3.23858 9.23865 1 12.0001 1ZM2.19238 13.9615L4.15392 13.5692C4.88321 17.2361 8.11888 20 12.0001 20C15.8813 20 19.1169 17.2361 19.8462 13.5692L21.8078 13.9615C20.8961 18.5452 16.8516 22 12.0001 22C7.14858 22 3.104 18.5452 2.19238 13.9615Z"></path></svg></button>
                 </div>
             </label>
             <div v-if="speechListening && speechTarget === 'recipeName' && speechPartial" class="speech-partial">{{ speechPartial }}</div>
@@ -110,7 +110,7 @@
                 <div class="textarea-with-mic">
                     <textarea v-model="editingRecipe.description"
                         placeholder="Kurze Beschreibung oder Notizen zum Rezept..." rows="10"></textarea>
-                    <button type="button" v-if="speechEnabled" class="mic-btn textarea-mic" :class="{ active: speechListening && speechTarget === 'description', loading: speechLoading }" @click="toggleSpeechListening('description')" title="Spracheingabe">&#x1F3A4;</button>
+                    <button type="button" v-if="speechEnabled" class="mic-btn textarea-mic" :class="{ active: speechListening && speechTarget === 'description', loading: speechLoading }" @click="toggleSpeechListening('description')" title="Spracheingabe"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0001 3C10.3432 3 9.00008 4.34315 9.00008 6V12C9.00008 13.6569 10.3432 15 12.0001 15C13.6569 15 15.0001 13.6569 15.0001 12V6C15.0001 4.34315 13.6569 3 12.0001 3ZM12.0001 1C14.7615 1 17.0001 3.23858 17.0001 6V12C17.0001 14.7614 14.7615 17 12.0001 17C9.23865 17 7.00008 14.7614 7.00008 12V6C7.00008 3.23858 9.23865 1 12.0001 1ZM2.19238 13.9615L4.15392 13.5692C4.88321 17.2361 8.11888 20 12.0001 20C15.8813 20 19.1169 17.2361 19.8462 13.5692L21.8078 13.9615C20.8961 18.5452 16.8516 22 12.0001 22C7.14858 22 3.104 18.5452 2.19238 13.9615Z"></path></svg></button>
                 </div>
             </label>
             <div v-if="speechListening && speechTarget === 'description' && speechPartial" class="speech-partial">{{ speechPartial }}</div>
@@ -148,7 +148,7 @@
             <div class="add-ingredient-actions">
                 <button type="button" class="secondary add-ingredient-btn" :class="{ outline: theme === 'dark' }"
                     @click="addIngredient()">+ Zutat</button>
-                <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'ingredient', loading: speechLoading }" @click="toggleSpeechListening('ingredient')" title="Zutat einsprechen">&#x1F3A4;</button>
+                <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'ingredient', loading: speechLoading }" @click="toggleSpeechListening('ingredient')" title="Zutat einsprechen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0001 3C10.3432 3 9.00008 4.34315 9.00008 6V12C9.00008 13.6569 10.3432 15 12.0001 15C13.6569 15 15.0001 13.6569 15.0001 12V6C15.0001 4.34315 13.6569 3 12.0001 3ZM12.0001 1C14.7615 1 17.0001 3.23858 17.0001 6V12C17.0001 14.7614 14.7615 17 12.0001 17C9.23865 17 7.00008 14.7614 7.00008 12V6C7.00008 3.23858 9.23865 1 12.0001 1ZM2.19238 13.9615L4.15392 13.5692C4.88321 17.2361 8.11888 20 12.0001 20C15.8813 20 19.1169 17.2361 19.8462 13.5692L21.8078 13.9615C20.8961 18.5452 16.8516 22 12.0001 22C7.14858 22 3.104 18.5452 2.19238 13.9615Z"></path></svg></button>
             </div>
             <div v-if="speechListening && speechTarget === 'ingredient' && speechPartial" class="speech-partial">{{ speechPartial }}</div>
 

@@ -99,6 +99,9 @@ const store = reactive({
     isIOSDevice: isIOS,
     canInstall: !isStandaloneMode,
 
+    // Storage persistence
+    storagePersisted: false,
+
     // Sync state
     syncEnabled: false,
     syncConnected: false,
@@ -129,6 +132,7 @@ const store = reactive({
     editingShoppingAmount: '',
     editingShoppingUnit: '',
     dragIndex: -1,
+    dragOverIndex: -2,
     editingRecipe: null,
     selectedDayIndex: null,
 
@@ -253,11 +257,12 @@ const store = reactive({
         try {
             let count;
             if (window.syncManager?.isInitialized) {
-                // When sync is active, save to syncManager
+                // When sync is active, save to syncManager in batch mode
                 const text = await file.text();
                 const recipes = JSON.parse(text);
                 if (!Array.isArray(recipes)) throw new Error('Ungültiges Format');
                 count = 0;
+                window.syncManager.beginBatch();
                 for (const recipe of recipes) {
                     if (recipe.name && Array.isArray(recipe.ingredients)) {
                         recipe.id = generateUUID();
@@ -266,6 +271,7 @@ const store = reactive({
                         count++;
                     }
                 }
+                window.syncManager.endBatch();
             } else {
                 count = await importRecipesFromFile(file);
             }
@@ -286,12 +292,13 @@ const store = reactive({
 
         try {
             if (window.syncManager?.isInitialized) {
-                // When sync is active, save to syncManager
+                // When sync is active, save to syncManager in batch mode
                 const response = await fetch('rezepte-export.json');
                 if (!response.ok) throw new Error('Datei nicht gefunden');
                 const recipes = await response.json();
                 if (!Array.isArray(recipes)) throw new Error('Ungültiges Format');
                 let imported = 0;
+                window.syncManager.beginBatch();
                 for (const recipe of recipes) {
                     if (recipe.name && Array.isArray(recipe.ingredients)) {
                         recipe.id = generateUUID();
@@ -300,6 +307,7 @@ const store = reactive({
                         imported++;
                     }
                 }
+                window.syncManager.endBatch();
                 await modal().alert(`${imported} Standardrezept(e) erfolgreich geladen!`);
             } else {
                 const count = await loadDefaultRecipesFromDB();
@@ -644,7 +652,32 @@ const store = reactive({
         await saveWeekplan(weekplan);
         await setSetting('currentWeekId', weekplan.weekId);
         this.weekplan = weekplan;
-        await this.generateShoppingList();
+
+        // Ask if shopping list should be generated
+        const generateList = await modal().confirm(
+            'Einkaufsliste erstellen?',
+            'Soll aus dem neuen Wochenplan automatisch eine Einkaufsliste erstellt werden? Vorhandene Einträge werden dabei gelöscht.'
+        );
+
+        if (generateList) {
+            // Clear custom items and saved order
+            this.customShoppingItems = [];
+            await setSetting('customShoppingItems', []);
+            await setSetting('shoppingListOrder', []);
+
+            // Clear shopping list checked state in sync
+            if (window.syncManager?.isInitialized) {
+                const checkedMap = window.syncManager.doc?.getMap('shoppingListChecked');
+                if (checkedMap) {
+                    const keys = Object.keys(checkedMap.toJSON());
+                    for (const key of keys) {
+                        checkedMap.delete(key);
+                    }
+                }
+            }
+
+            await this.generateShoppingList();
+        }
 
         // Sync if enabled
         if (window.syncManager?.isInitialized) {
@@ -812,28 +845,45 @@ const store = reactive({
 
     // Drag & Drop for reordering
     onDragStart(index, event) {
+        // Prevent native drag when touch is active - touch handlers manage it
+        if (this._touchDragState) {
+            event.preventDefault();
+            return;
+        }
         this.dragIndex = index;
+        this.dragOverIndex = -2;
         if (event.dataTransfer) {
             event.dataTransfer.effectAllowed = 'move';
         }
-        event.target.closest('.item')?.classList.add('dragging');
     },
 
     onDragOver(index, event) {
         event.preventDefault();
-        if (this.dragIndex === index) return;
-
-        const items = [...this.shoppingList];
-        const [moved] = items.splice(this.dragIndex, 1);
-        items.splice(index, 0, moved);
-        this.shoppingList = items;
-        this.dragIndex = index;
+        const wrapper = event.currentTarget;
+        const itemEl = wrapper.querySelector('.item');
+        if (!itemEl) return;
+        const rect = itemEl.getBoundingClientRect();
+        const middle = rect.top + rect.height / 2;
+        this.dragOverIndex = event.clientY > middle ? index : index - 1;
     },
 
-    async onDragEnd(event) {
-        event.target.closest('.item')?.classList.remove('dragging');
+    onDragLeave(event) {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+            this.dragOverIndex = -2;
+        }
+    },
+
+    async onDragEnd() {
+        if (this.dragOverIndex > -2 && this.dragIndex > -1) {
+            const to = this.dragOverIndex < this.dragIndex
+                ? this.dragOverIndex + 1
+                : this.dragOverIndex;
+            if (to !== this.dragIndex) {
+                this._flipReorder(this.dragIndex, to);
+            }
+        }
         this.dragIndex = -1;
-        await this._saveShoppingOrder();
+        this.dragOverIndex = -2;
     },
 
     // Touch drag & drop
@@ -856,8 +906,8 @@ const store = reactive({
         this._touchTimer = setTimeout(() => {
             if (this._touchDragState) {
                 this._touchDragState.moved = true;
-                itemEl.classList.add('dragging');
                 this.dragIndex = index;
+                this.dragOverIndex = -2;
             }
         }, 200);
     },
@@ -879,29 +929,94 @@ const store = reactive({
         const touch = event.touches[0];
         this._touchDragState.currentY = touch.clientY;
 
-        // Find target item under touch
-        const elements = document.elementsFromPoint(touch.clientX, touch.clientY);
-        const targetItem = elements.find(el => el.classList?.contains('item') && el !== this._touchDragState.itemEl);
-        if (targetItem) {
-            const targetIndex = parseInt(targetItem.dataset.index);
-            if (!isNaN(targetIndex) && targetIndex !== this.dragIndex) {
-                const items = [...this.shoppingList];
-                const [moved] = items.splice(this.dragIndex, 1);
-                items.splice(targetIndex, 0, moved);
-                this.shoppingList = items;
-                this.dragIndex = targetIndex;
+        // Find item-wrapper under touch and calculate separator position
+        const wrappers = document.querySelectorAll('.shopping-list .item-wrapper');
+        let found = false;
+        for (const wrapper of wrappers) {
+            const rect = wrapper.getBoundingClientRect();
+            if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                const index = parseInt(wrapper.dataset.index);
+                const middle = rect.top + rect.height / 2;
+                this.dragOverIndex = touch.clientY > middle ? index : index - 1;
+                found = true;
+                break;
             }
         }
+        if (!found) this.dragOverIndex = -2;
     },
 
     async onTouchEnd() {
         clearTimeout(this._touchTimer);
         if (this._touchDragState?.moved) {
-            this._touchDragState.itemEl.classList.remove('dragging');
+            if (this.dragOverIndex > -2 && this.dragIndex > -1) {
+                const to = this.dragOverIndex < this.dragIndex
+                    ? this.dragOverIndex + 1
+                    : this.dragOverIndex;
+                if (to !== this.dragIndex) {
+                    this._flipReorder(this.dragIndex, to);
+                }
+            }
             this.dragIndex = -1;
-            await this._saveShoppingOrder();
+            this.dragOverIndex = -2;
         }
         this._touchDragState = null;
+    },
+
+    _flipReorder(fromIndex, toIndex) {
+        const container = document.querySelector('.shopping-list');
+        if (!container) return;
+
+        const wrappers = [...container.querySelectorAll('.item-wrapper')];
+
+        // FIRST: record positions
+        const firstRects = wrappers.map(el => el.getBoundingClientRect());
+
+        // Compute old→new index mapping directly (no identity keys needed)
+        // Moving fromIndex to toIndex shifts items in between by one position
+        const oldToNew = new Array(wrappers.length);
+        for (let i = 0; i < wrappers.length; i++) {
+            if (i === fromIndex) {
+                oldToNew[i] = toIndex;
+            } else if (fromIndex < toIndex && i > fromIndex && i <= toIndex) {
+                oldToNew[i] = i - 1;
+            } else if (fromIndex > toIndex && i >= toIndex && i < fromIndex) {
+                oldToNew[i] = i + 1;
+            } else {
+                oldToNew[i] = i;
+            }
+        }
+
+        // Reorder array
+        const items = [...this.shoppingList];
+        const [moved] = items.splice(fromIndex, 1);
+        items.splice(toIndex, 0, moved);
+        this.shoppingList = items;
+
+        // LAST + INVERT + PLAY
+        requestAnimationFrame(() => {
+            const newWrappers = [...container.querySelectorAll('.item-wrapper')];
+            for (let oldIdx = 0; oldIdx < oldToNew.length; oldIdx++) {
+                const newIdx = oldToNew[oldIdx];
+                if (newIdx === oldIdx) continue;
+
+                const el = newWrappers[newIdx];
+                if (!el) continue;
+
+                const dy = firstRects[oldIdx].top - firstRects[newIdx].top;
+                if (Math.abs(dy) < 1) continue;
+
+                el.style.transform = `translateY(${dy}px)`;
+                el.style.transition = 'none';
+                el.offsetHeight; // force reflow
+                el.style.transition = 'transform 200ms ease';
+                el.style.transform = '';
+                el.addEventListener('transitionend', () => {
+                    el.style.transition = '';
+                }, { once: true });
+            }
+        });
+
+        this._saveShoppingOrder();
     },
 
     async _saveShoppingOrder() {
@@ -999,8 +1114,27 @@ const store = reactive({
         }
     },
 
-    async showSharePopup() {
-        await modal().custom({
+    showSharePopup() {
+        const shareModal = $id('appModal');
+
+        // Add event listener BEFORE showing modal
+        const handleClick = async (e) => {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+
+            shareModal.removeEventListener('click', handleClick);
+            shareModal._resolve(false);
+
+            const action = btn.dataset.action;
+            if (action === 'weekplan') await this.shareWeekplan();
+            else if (action === 'shopping') await this.shareShoppingList();
+            else if (action === 'app') await this.shareApp();
+        };
+
+        shareModal.addEventListener('click', handleClick);
+
+        // Show modal (don't await - we handle clicks ourselves)
+        modal().custom({
             title: 'Teilen',
             html: `
                 <div class="share-options">
@@ -1022,23 +1156,10 @@ const store = reactive({
             showConfirm: false,
             showCancel: true,
             cancelText: 'Abbrechen'
-        });
-
-        // Handle button clicks via event delegation
-        const shareModal = $id('appModal');
-        const handleClick = async (e) => {
-            const btn = e.target.closest('[data-action]');
-            if (!btn) return;
-
-            shareModal.close();
+        }).then(() => {
+            // Cleanup listener when modal is closed via cancel/backdrop
             shareModal.removeEventListener('click', handleClick);
-
-            const action = btn.dataset.action;
-            if (action === 'weekplan') await this.shareWeekplan();
-            else if (action === 'shopping') await this.shareShoppingList();
-            else if (action === 'app') await this.shareApp();
-        };
-        shareModal.addEventListener('click', handleClick);
+        });
     },
 
     // === THEME ===
@@ -1199,6 +1320,7 @@ const store = reactive({
                 }
 
                 const existingRecipes = await getAllRecipes();
+                syncManager.beginBatch();
                 for (const recipe of existingRecipes) {
                     syncManager.saveRecipe(recipe);
                 }
@@ -1206,6 +1328,7 @@ const store = reactive({
                 if (this.weekplan) {
                     syncManager.saveWeekplan(deepClone(this.weekplan));
                 }
+                syncManager.endBatch();
             }
 
             // Track local weekplan timestamp for conflict resolution
@@ -1531,6 +1654,16 @@ if (!store.bubblesEnabled) {
 // Load initial data
 await store.loadRecipes();
 await store.loadWeekplan();
+
+// Request persistent storage (prevents browser from evicting IndexedDB data)
+if (navigator.storage?.persist) {
+    const persisted = await navigator.storage.persisted();
+    if (persisted) {
+        store.storagePersisted = true;
+    } else {
+        store.storagePersisted = await navigator.storage.persist();
+    }
+}
 
 // Mount petite-vue
 createApp(store).mount('#app');

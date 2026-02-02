@@ -25,11 +25,8 @@
 </article>
 <article class="init-content-1 text-center" v-if="recipes.length === 0">
     <h3 class="mb-0">Also, LOS GEHTs!</h3>
-    <p class="mb-0">Du kannst jetzt...</p>
-
-    <button :class="{ outline: theme === 'dark' }" @click="loadDefaultRecipes()">Vorbereitete Standardrezepte laden</button>
-    <p class="mb-0">oder gleich</p>
-    <button :class="{ outline: theme === 'dark' }" @click="navigateTo(2)">Eigene Rezepte erstellen</button>
+    <p class="mb-0">Du hast noch keine Rezepte.<br>Bevor du einen Wochenplan erstellen kannst, brauchst du Rezepte.</p>
+    <p><button class="" @click="navigateTo(2)">Leg jetzt ganz einfach die ersten Rezepte an!</button></p>
 </article>
 
 <article class="grid" v-if="recipes.length !== 0 && !weekplan">
@@ -43,7 +40,7 @@
 </article>
 
 <!-- Wochenplan vorhanden -->
-<div v-if="weekplan" :key="weekplan.weekId" class="weekplan-grid">
+<div v-if="weekplan" :key="weekplan.weekId" class="weekplan-grid grid">
     <article v-for="(day, index) in weekplan.days" :key="day.dayName"
              class="day-slot mb-1" @click="openRecipeDrawer(index)">
         <div class="day-header">

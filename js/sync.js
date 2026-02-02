@@ -41,6 +41,9 @@ class SyncManager {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 2000;
+        this._batchMode = false;
+        this._recipesCache = null;
+        this._recipesCacheDirty = true;
     }
 
     /**
@@ -323,6 +326,7 @@ class SyncManager {
 
             // Import the remote data (Loro handles merge automatically)
             this.doc.import(binary);
+            this._recipesCacheDirty = true;
 
             // Get the merged weekplan
             const mergedWeekplan = this.getWeekplan();
@@ -376,6 +380,11 @@ class SyncManager {
     getRecipes() {
         if (!this.doc) return [];
 
+        // Return cached result if nothing changed
+        if (!this._recipesCacheDirty && this._recipesCache) {
+            return this._recipesCache;
+        }
+
         try {
             const recipesMap = this.doc.getMap('recipes');
             const recipes = [];
@@ -390,6 +399,8 @@ class SyncManager {
                 }
             }
 
+            this._recipesCache = recipes;
+            this._recipesCacheDirty = false;
             return recipes;
         } catch (err) {
             console.error('[Sync] getRecipes error:', err);
@@ -413,7 +424,8 @@ class SyncManager {
 
             recipesMap.set(id, recipeData);
 
-            // Trigger sync
+            // Invalidate cache and trigger sync
+            this._recipesCacheDirty = true;
             this._triggerSync();
 
             return id;
@@ -428,9 +440,13 @@ class SyncManager {
         try {
             const recipesMap = this.doc.getMap('recipes');
 
-            // Get recipe as plain object via toJSON()
-            const allRecipes = recipesMap.toJSON();
-            const recipe = allRecipes[id];
+            // Get only the single recipe via targeted get() instead of full toJSON()
+            const recipeContainer = recipesMap.get(id);
+            if (!recipeContainer) return;
+
+            const recipe = (typeof recipeContainer.toJSON === 'function')
+                ? recipeContainer.toJSON()
+                : recipeContainer;
 
             if (recipe && typeof recipe === 'object') {
                 // Tombstone deletion - store as plain JSON
@@ -440,7 +456,8 @@ class SyncManager {
                     deletedAt: Date.now()
                 })));
 
-                // Trigger sync
+                // Invalidate cache and trigger sync
+                this._recipesCacheDirty = true;
                 this._triggerSync();
             }
         } catch (err) {
@@ -522,9 +539,26 @@ class SyncManager {
     // ==========================================
 
     /**
+     * Begin batch mode: suppresses sync triggers until endBatch() is called.
+     * Use for bulk operations like importing many recipes at once.
+     */
+    beginBatch() {
+        this._batchMode = true;
+    }
+
+    /**
+     * End batch mode and trigger a single sync.
+     */
+    endBatch() {
+        this._batchMode = false;
+        this._triggerSync();
+    }
+
+    /**
      * Trigger sync: send to server quickly, defer IndexedDB save
      */
     _triggerSync() {
+        if (this._batchMode) return;
         // Send over WebSocket with short debounce (150ms)
         if (this._sendTimeout) {
             clearTimeout(this._sendTimeout);

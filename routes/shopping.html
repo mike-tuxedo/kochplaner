@@ -11,62 +11,65 @@
     </div>
 </div>
 
-<!-- Keine Einkaufsliste -->
-<div v-if="shoppingList.length === 0 && !weekplan" class="empty-state">
-    <p>Keine Einkaufsliste verfügbar.</p>
-    <p>Erstelle zuerst einen Wochenplan!</p>
-    <button class="mt-1" :class="{ outline: theme === 'dark' }" @click="navigateTo(1)">Zum Wochenplan</button>
-</div>
-
 <!-- Eintrag hinzufuegen -->
 <div class="shopping-add">
     <form @submit.prevent="addShoppingItem()" role="group">
         <input type="text" v-model="newShoppingItem" placeholder="Eintrag hinzufuegen...">
-        <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'shopping' }" @click="toggleSpeechListening('shopping')" title="Spracheingabe">&#x1F3A4;</button>
+        <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'shopping' }" @click="toggleSpeechListening('shopping')" title="Spracheingabe"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0001 3C10.3432 3 9.00008 4.34315 9.00008 6V12C9.00008 13.6569 10.3432 15 12.0001 15C13.6569 15 15.0001 13.6569 15.0001 12V6C15.0001 4.34315 13.6569 3 12.0001 3ZM12.0001 1C14.7615 1 17.0001 3.23858 17.0001 6V12C17.0001 14.7614 14.7615 17 12.0001 17C9.23865 17 7.00008 14.7614 7.00008 12V6C7.00008 3.23858 9.23865 1 12.0001 1ZM2.19238 13.9615L4.15392 13.5692C4.88321 17.2361 8.11888 20 12.0001 20C15.8813 20 19.1169 17.2361 19.8462 13.5692L21.8078 13.9615C20.8961 18.5452 16.8516 22 12.0001 22C7.14858 22 3.104 18.5452 2.19238 13.9615Z"></path></svg></button>
         <button type="submit" :disabled="!newShoppingItem.trim()">+</button>
     </form>
     <div v-if="speechListening && speechTarget === 'shopping' && speechPartial" class="speech-partial">{{ speechPartial }}</div>
 </div>
 
+<!-- Hinweis bei leerer Liste -->
+<div v-if="shoppingList.length === 0" class="shopping-empty-hint">
+    <p>Deine Einkaufsliste ist leer.</p>
+    <p>Du kannst oben eigene Einträge hinzufügen oder über den <button class="btn-small" @click="navigateTo(1)">Wochenplan</button> automatisch eine Einkaufsliste erstellen lassen.</p>
+</div>
+
 <!-- Einkaufsliste -->
 <article v-if="shoppingList.length > 0" :class="{ 'shopping-edit-mode': shoppingEditMode }">
     <small class="shopping-hint">Tipp: Lange auf einen Eintrag drucken, um ihn zu verschieben</small>
-    <div class="shopping-list">
+    <div class="shopping-list" @dragleave="onDragLeave($event)">
+        <div class="separator" :class="{ active: dragOverIndex === -1 }"></div>
         <div v-for="(item, index) in shoppingList" :key="index"
-             class="item" :class="{ checked: item.checked, dragging: dragIndex === index }"
+             class="item-wrapper"
              :data-index="index"
-             draggable="true"
-             @dragstart="onDragStart(index, $event)"
-             @dragover="onDragOver(index, $event)"
-             @dragend="onDragEnd($event)"
-             @touchstart="onTouchStart(index, $event)"
-             @touchmove="onTouchMove($event)"
-             @touchend="onTouchEnd()">
+             @dragover.prevent="onDragOver(index, $event)">
+            <div class="item" :class="{ checked: item.checked, dragging: dragIndex === index }"
+                 draggable="true"
+                 @dragstart="onDragStart(index, $event)"
+                 @dragend="onDragEnd()"
+                 @touchstart="onTouchStart(index, $event)"
+                 @touchmove="onTouchMove($event)"
+                 @touchend="onTouchEnd()">
 
-            <!-- Normal view -->
-            <template v-if="editingShoppingIndex !== index">
-                <input type="checkbox" :id="'item-' + index"
-                       v-model="item.checked" @change="syncShoppingList(item)">
-                <label :for="'item-' + index" class="ingredient-info" @dblclick="startEditItem(index)">
-                    <div>{{ item.name }}</div>
-                    <div class="amount" v-if="item.amount || item.unit">{{ item.amount }} {{ item.unit }}</div>
-                </label>
-                <div class="item-actions">
-                    <button class="btn-icon" @click="startEditItem(index)" title="Bearbeiten"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5 18.89H6.41421L15.7279 9.57627L14.3137 8.16206L5 17.4758V18.89ZM21 20.89H3V16.6473L16.435 3.21231C16.8256 2.82179 17.4587 2.82179 17.8492 3.21231L20.6777 6.04074C21.0682 6.43126 21.0682 7.06443 20.6777 7.45495L9.24264 18.89H21V20.89ZM15.7279 6.74785L17.1421 8.16206L18.5563 6.74785L17.1421 5.33363L15.7279 6.74785Z"></path></svg></button>
-                    <button class="btn-icon btn-delete" @click="removeShoppingItem(index)" title="Loeschen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8ZM6 10V20H18V10H6ZM9 12H11V18H9V12ZM13 12H15V18H13V12ZM7 5V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V5H22V7H2V5H7ZM9 4V5H15V4H9Z"></path></svg></button>
-                </div>
-            </template>
+                <!-- Normal view -->
+                <template v-if="editingShoppingIndex !== index">
+                    <input type="checkbox" :id="'item-' + index"
+                           v-model="item.checked" @change="syncShoppingList(item)">
+                    <label :for="'item-' + index" class="ingredient-info" @dblclick="startEditItem(index)">
+                        <div>{{ item.name }}</div>
+                        <div class="amount" v-if="item.amount || item.unit">{{ item.amount }} {{ item.unit }}</div>
+                    </label>
+                    <div class="item-actions">
+                        <button class="btn-icon" @click="startEditItem(index)" title="Bearbeiten"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5 18.89H6.41421L15.7279 9.57627L14.3137 8.16206L5 17.4758V18.89ZM21 20.89H3V16.6473L16.435 3.21231C16.8256 2.82179 17.4587 2.82179 17.8492 3.21231L20.6777 6.04074C21.0682 6.43126 21.0682 7.06443 20.6777 7.45495L9.24264 18.89H21V20.89ZM15.7279 6.74785L17.1421 8.16206L18.5563 6.74785L17.1421 5.33363L15.7279 6.74785Z"></path></svg></button>
+                        <button class="btn-icon btn-delete" @click="removeShoppingItem(index)" title="Loeschen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8ZM6 10V20H18V10H6ZM9 12H11V18H9V12ZM13 12H15V18H13V12ZM7 5V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V5H22V7H2V5H7ZM9 4V5H15V4H9Z"></path></svg></button>
+                    </div>
+                </template>
 
-            <!-- Edit view -->
-            <template v-else>
-                <form class="item-edit-form" @submit.prevent="saveEditItem(index)">
-                    <input type="text" v-model="editingShoppingText" placeholder="Name" class="edit-name" autofocus>
-                    <input type="number" v-model="editingShoppingAmount" placeholder="Menge" class="edit-amount" step="any">
-                    <input type="text" v-model="editingShoppingUnit" placeholder="Einheit" class="edit-unit">
-                    <button type="submit" class="btn-icon" title="Speichern"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9.9997 15.1709L19.1921 5.97852L20.6063 7.39273L9.9997 17.9993L3.63574 11.6354L5.04996 10.2212L9.9997 15.1709Z"></path></svg></button>
-                    <button type="button" class="btn-icon" @click="cancelEditItem()" title="Abbrechen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8ZM6 10V20H18V10H6ZM9 12H11V18H9V12ZM13 12H15V18H13V12ZM7 5V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V5H22V7H2V5H7ZM9 4V5H15V4H9Z"></path></svg></button>
-                </form>
-            </template>
+                <!-- Edit view -->
+                <template v-else>
+                    <form class="item-edit-form" @submit.prevent="saveEditItem(index)">
+                        <input type="text" v-model="editingShoppingText" placeholder="Name" class="edit-name" autofocus>
+                        <input type="number" v-model="editingShoppingAmount" placeholder="Menge" class="edit-amount" step="any">
+                        <input type="text" v-model="editingShoppingUnit" placeholder="Einheit" class="edit-unit">
+                        <button type="submit" class="btn-icon" title="Speichern"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9.9997 15.1709L19.1921 5.97852L20.6063 7.39273L9.9997 17.9993L3.63574 11.6354L5.04996 10.2212L9.9997 15.1709Z"></path></svg></button>
+                        <button type="button" class="btn-icon" @click="cancelEditItem()" title="Abbrechen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8ZM6 10V20H18V10H6ZM9 12H11V18H9V12ZM13 12H15V18H13V12ZM7 5V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V5H22V7H2V5H7ZM9 4V5H15V4H9Z"></path></svg></button>
+                    </form>
+                </template>
+            </div>
+            <div class="separator" :class="{ active: dragOverIndex === index }"></div>
         </div>
     </div>
 </article>

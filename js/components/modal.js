@@ -110,18 +110,21 @@ class ModalComponent extends HTMLElement {
         const confirmBtn = this.querySelector('.modal-confirm');
 
         messageEl.textContent = message;
+        messageEl.style.display = 'inline-block';
 
         if (description) {
             descriptionEl.textContent = description;
             descriptionEl.style.display = 'block';
         } else {
+            descriptionEl.innerHTML = '';
             descriptionEl.style.display = 'none';
         }
 
-        // Reset button texts
+        // Reset button texts and visibility
         cancelBtn.textContent = 'Abbrechen';
         confirmBtn.textContent = 'OK';
         cancelBtn.style.display = showCancel ? 'inline-block' : 'none';
+        confirmBtn.style.display = 'inline-block';
 
         this.classList.add('show');
         confirmBtn.focus();
