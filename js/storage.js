@@ -32,25 +32,43 @@ export async function initDB() {
     if (db) return db;
 
     db = await openDB(DB_NAME, DB_VERSION, {
-        upgrade(db, oldVersion, newVersion, transaction) {
+        upgrade(database, oldVersion, newVersion, transaction) {
             // Object Store: recipes
-            if (!db.objectStoreNames.contains('recipes')) {
-                const recipeStore = db.createObjectStore('recipes', { keyPath: 'id' });
+            if (!database.objectStoreNames.contains('recipes')) {
+                const recipeStore = database.createObjectStore('recipes', { keyPath: 'id' });
                 recipeStore.createIndex('createdAt', 'createdAt');
             }
 
             // Object Store: weekplans
-            if (!db.objectStoreNames.contains('weekplans')) {
-                const weekplanStore = db.createObjectStore('weekplans', { keyPath: 'weekId' });
+            if (!database.objectStoreNames.contains('weekplans')) {
+                const weekplanStore = database.createObjectStore('weekplans', { keyPath: 'weekId' });
                 weekplanStore.createIndex('startDate', 'startDate');
             }
 
             // Object Store: settings
-            if (!db.objectStoreNames.contains('settings')) {
-                db.createObjectStore('settings', { keyPath: 'key' });
+            if (!database.objectStoreNames.contains('settings')) {
+                database.createObjectStore('settings', { keyPath: 'key' });
             }
         }
     });
+
+    // Check if all required stores exist (can happen after partial browser data clear)
+    const requiredStores = ['recipes', 'weekplans', 'settings'];
+    const missingStores = requiredStores.filter(store => !db.objectStoreNames.contains(store));
+
+    if (missingStores.length > 0) {
+        // Close connection and delete corrupted database
+        db.close();
+        db = null;
+        await new Promise((resolve, reject) => {
+            const deleteReq = indexedDB.deleteDatabase(DB_NAME);
+            deleteReq.onsuccess = () => resolve();
+            deleteReq.onerror = () => reject(deleteReq.error);
+            deleteReq.onblocked = () => resolve(); // Continue anyway if blocked
+        });
+        // Recursively call to create fresh database
+        return initDB();
+    }
 
     return db;
 }

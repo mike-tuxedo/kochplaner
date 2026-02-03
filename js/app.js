@@ -653,13 +653,10 @@ const store = reactive({
         await setSetting('currentWeekId', weekplan.weekId);
         this.weekplan = weekplan;
 
-        // Ask if shopping list should be generated
-        const generateList = await modal().confirm(
-            'Einkaufsliste erstellen?',
-            'Soll aus dem neuen Wochenplan automatisch eine Einkaufsliste erstellt werden? Vorhandene Einträge werden dabei gelöscht.'
-        );
+        // Ask about shopping list with 3 options
+        const shoppingAction = await this._showShoppingListOptions();
 
-        if (generateList) {
+        if (shoppingAction === 'replace') {
             // Clear custom items and saved order
             this.customShoppingItems = [];
             await setSetting('customShoppingItems', []);
@@ -677,7 +674,11 @@ const store = reactive({
             }
 
             await this.generateShoppingList();
+        } else if (shoppingAction === 'append') {
+            // Keep existing items and add new ones from weekplan
+            await this.generateShoppingList();
         }
+        // 'skip' - do nothing
 
         // Sync if enabled
         if (window.syncManager?.isInitialized) {
@@ -777,10 +778,12 @@ const store = reactive({
 
         const newItem = { name, amount: 0, unit: '', checked: false };
         this.customShoppingItems.push(newItem);
-        await setSetting('customShoppingItems', this.customShoppingItems);
+        await setSetting('customShoppingItems', deepClone(this.customShoppingItems));
 
-        this.shoppingList.push({ ...newItem, custom: true });
+        // Add at top of list so user sees it immediately
+        this.shoppingList.unshift({ ...newItem, custom: true });
         this.newShoppingItem = '';
+        await this._saveShoppingOrder();
     },
 
     async removeShoppingItem(index) {
@@ -791,7 +794,7 @@ const store = reactive({
             // Remove from custom items
             const ci = this.customShoppingItems.findIndex(c => c.name === item.name);
             if (ci !== -1) this.customShoppingItems.splice(ci, 1);
-            await setSetting('customShoppingItems', this.customShoppingItems);
+            await setSetting('customShoppingItems', deepClone(this.customShoppingItems));
         }
 
         this.shoppingList.splice(index, 1);
@@ -836,7 +839,7 @@ const store = reactive({
                 ci.amount = item.amount;
                 ci.unit = item.unit;
             }
-            await setSetting('customShoppingItems', this.customShoppingItems);
+            await setSetting('customShoppingItems', deepClone(this.customShoppingItems));
         }
 
         this.cancelEditItem();
@@ -1640,6 +1643,54 @@ const store = reactive({
                 item.checked = checkedItems[item.name];
             }
         }
+    },
+
+    /**
+     * Show shopping list options modal after weekplan generation
+     * Returns: 'append' | 'replace' | 'skip'
+     */
+    _showShoppingListOptions() {
+        return new Promise((resolve) => {
+            const shoppingModal = $id('appModal');
+
+            const handleClick = (e) => {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+
+                shoppingModal.removeEventListener('click', handleClick);
+                shoppingModal._resolve(false);
+                resolve(btn.dataset.action);
+            };
+
+            shoppingModal.addEventListener('click', handleClick);
+
+            modal().custom({
+                title: 'Einkaufsliste',
+                html: `
+                    <p>Wie soll die Einkaufsliste aktualisiert werden?</p>
+                    <div class="shopping-list-options">
+                        <button class="primary mt-1" data-action="append">
+                            Ergänzen
+                            <small>Vorhandene Einträge behalten</small>
+                        </button>
+                        <button class="secondary mt-1" data-action="replace">
+                            Ersetzen
+                            <small>Vorhandene Einträge löschen</small>
+                        </button>
+                        <button class="outline mt-1" data-action="skip">
+                            Überspringen
+                            <small>Keine Einkaufsliste erstellen</small>
+                        </button>
+                    </div>
+                `,
+                showTitle: true,
+                showConfirm: false,
+                showCancel: false
+            }).then(() => {
+                shoppingModal.removeEventListener('click', handleClick);
+                resolve('skip'); // Default if modal closed via backdrop
+            });
+        });
     }
 });
 
