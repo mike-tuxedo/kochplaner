@@ -39,8 +39,8 @@ class ModalComponent extends HTMLElement {
                     <p class="modal-description"></p>
                 </div>
                 <div class="modal-actions">
-                    <button class="modal-cancel secondary">Abbrechen</button>
-                    <button class="modal-confirm">OK</button>
+                    <button class="modal-cancel secondary">${window.__i18n_modal_cancel || 'Abbrechen'}</button>
+                    <button class="modal-confirm">${window.__i18n_modal_ok || 'OK'}</button>
                 </div>
             </div>
         `;
@@ -78,7 +78,7 @@ class ModalComponent extends HTMLElement {
     /**
      * Show custom dialog with HTML content
      */
-    custom({ title, html = '', confirmText = 'OK', cancelText = 'Abbrechen', showCancel = true, showConfirm = true, showTitle = true }) {
+    custom({ title, html = '', confirmText = (window.__i18n_modal_ok || 'OK'), cancelText = (window.__i18n_modal_cancel || 'Abbrechen'), showCancel = true, showConfirm = true, showTitle = true }) {
         const messageEl = this.querySelector('.modal-message');
         const descriptionEl = this.querySelector('.modal-description');
         const cancelBtn = this.querySelector('.modal-cancel');
@@ -121,8 +121,8 @@ class ModalComponent extends HTMLElement {
         }
 
         // Reset button texts and visibility
-        cancelBtn.textContent = 'Abbrechen';
-        confirmBtn.textContent = 'OK';
+        cancelBtn.textContent = window.__i18n_modal_cancel || 'Abbrechen';
+        confirmBtn.textContent = window.__i18n_modal_ok || 'OK';
         cancelBtn.style.display = showCancel ? 'inline-block' : 'none';
         confirmBtn.style.display = 'inline-block';
 

@@ -1,69 +1,79 @@
 <div class="page-header">
-    <h2>Einstellungen</h2>
+    <h2>{{ t('settings.title') }}</h2>
 </div>
 
 <article class="settings-section">
-    <h4>Darstellung</h4>
+    <hgroup>
+        <h4>{{ t('settings.language_title') }}</h4>
+    </hgroup>
+    <select @change="changeLocale($event.target.value)">
+        <option value="de" :selected="locale === 'de'">Deutsch</option>
+        <option value="en" :selected="locale === 'en'">English</option>
+    </select>
+</article>
+
+<article class="settings-section">
+    <h4>{{ t('settings.display_title') }}</h4>
     <label>
         <input type="checkbox" role="switch" @change="toggleTheme()"/>
-        {{ theme === 'light' ? '☀️ Light Mode' : '🌙 Dark Mode' }}
+        {{ theme === 'light' ? '☀️ ' + t('settings.light_mode') : '🌙 ' + t('settings.dark_mode') }}
     </label>
     <label>
         <input type="checkbox" role="switch" :checked="bubblesEnabled" @change="toggleBubbles()"/>
-        🫧 Hintergrund-Animation
+        🫧 {{ t('settings.bg_animation') }}
     </label>
 </article>
 
 <article class="settings-section">
     <hgroup>
-        <h4>Synchronisierung</h4>
-        <p>Verschlüsselte Synchronisierung zwischen Geräten.</p>
+        <h4>{{ t('settings.sync_title') }}</h4>
+        <p>{{ t('settings.sync_desc') }}</p>
     </hgroup>
 
     <!-- State: Not configured -->
     <div v-if="syncState === 'none'" class="sync-setup">
         <button @click="startNewSync()" :disabled="syncLoading">
-            <span v-if="syncLoading">Verbinde...</span>
-            <span v-else><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C15.866 2 19 5.13401 19 9C19 9.11351 18.9973 9.22639 18.992 9.33857C21.3265 10.16 23 12.3846 23 15C23 18.3137 20.3137 21 17 21H7C3.68629 21 1 18.3137 1 15C1 12.3846 2.67346 10.16 5.00804 9.33857C5.0027 9.22639 5 9.11351 5 9C5 5.13401 8.13401 2 12 2ZM12 4C9.23858 4 7 6.23858 7 9C7 9.08147 7.00193 9.16263 7.00578 9.24344L7.07662 10.7309L5.67183 11.2252C4.0844 11.7837 3 13.2889 3 15C3 17.2091 4.79086 19 7 19H17C19.2091 19 21 17.2091 21 15C21 12.79 19.21 11 17 11C15.233 11 13.7337 12.1457 13.2042 13.7347L11.3064 13.1021C12.1005 10.7185 14.35 9 17 9C17 6.23858 14.7614 4 12 4Z"></path></svg> Neuen Sync starten</span>
+            <span v-if="syncLoading">{{ t('common.connecting') }}</span>
+            <span v-else><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C15.866 2 19 5.13401 19 9C19 9.11351 18.9973 9.22639 18.992 9.33857C21.3265 10.16 23 12.3846 23 15C23 18.3137 20.3137 21 17 21H7C3.68629 21 1 18.3137 1 15C1 12.3846 2.67346 10.16 5.00804 9.33857C5.0027 9.22639 5 9.11351 5 9C5 5.13401 8.13401 2 12 2ZM12 4C9.23858 4 7 6.23858 7 9C7 9.08147 7.00193 9.16263 7.00578 9.24344L7.07662 10.7309L5.67183 11.2252C4.0844 11.7837 3 13.2889 3 15C3 17.2091 4.79086 19 7 19H17C19.2091 19 21 17.2091 21 15C21 12.79 19.21 11 17 11C15.233 11 13.7337 12.1457 13.2042 13.7347L11.3064 13.1021C12.1005 10.7185 14.35 9 17 9C17 6.23858 14.7614 4 12 4Z"></path></svg> {{ t('settings.sync_start') }}</span>
         </button>
-        <button class="secondary outline" @click="showImportKey()" :disabled="syncLoading">Mit bestehendem Gerät verbinden</button>
+        <button class="secondary outline" @click="showImportKey()" :disabled="syncLoading">{{ t('settings.sync_join') }}</button>
         <details class="mt-1">
-            <summary>Weitere Infos zur Synchronisierung</summary>
-            <p>Du kannst mehrere Geräte von dir und anderen Person miteinander synchronisieren. Dazu musst du nur initial auf einem Gerät einmal "Neuen Sync starten" wählen und bei allen weiteren Geräten "Mit bestehendem Gerät verbinden".</p>
-            <p>Deine Daten werden sicher und verschlüsselt zwischen den Geräten ausgetauscht.</p>
-            <mark>Wichtig ist zu beachten, das alle Daten synchronisiert werden. Löscht du zB ein Rezept, wird es bei allen gelöscht.</mark>
+            <summary>{{ t('settings.sync_info_title') }}</summary>
+            <p>{{ t('settings.sync_info_text') }}</p>
+            <p>{{ t('settings.sync_info_text2') }}</p>
+            <mark>{{ t('settings.sync_info_warn') }}</mark>
         </details>
-        
+
         <details class="mt-1">
-            <summary>Erweiterte Einstellungen</summary>
-            <p>Hier nur etwas ändern, wenn du einen eigenen Synchronisierungsserver hostest.</p>
-            <label for="sync-server">Server-Adresse</label>
+            <summary>{{ t('settings.sync_advanced') }}</summary>
+            <p>{{ t('settings.sync_advanced_text') }}</p>
+            <label for="sync-server">{{ t('settings.sync_server_label') }}</label>
             <input type="text" id="sync-server" v-model="syncServerUrl" placeholder="wss://...">
         </details>
     </div>
 
     <!-- State: Import key -->
     <div v-if="syncState === 'importing'" class="sync-import">
-        <p>Scanne den QR-Code vom anderen Gerät oder gib den Schlüssel manuell ein.</p>
+        <p>{{ t('settings.sync_scan_text') }}</p>
         <div class="settings-actions">
-            <button @click="startQRScanner()" :disabled="syncLoading">QR-Code scannen</button>
+            <button @click="startQRScanner()" :disabled="syncLoading">{{ t('settings.sync_scan_qr') }}</button>
         </div>
         <details class="mt-1" open>
-            <summary>Schlüssel manuell eingeben</summary>
-            <input type="text" v-model="syncKeyInput" placeholder="Schlüssel einfügen..." autocomplete="off">
+            <summary>{{ t('settings.sync_manual_title') }}</summary>
+            <input type="text" v-model="syncKeyInput" :placeholder="t('settings.sync_manual_placeholder')" autocomplete="off">
             <div class="settings-actions">
                 <button class="secondary" @click="importSyncKey()" :disabled="syncLoading || !syncKeyInput.trim()">
-                    <span v-if="syncLoading">Verbinde...</span>
-                    <span v-else>Verbinden</span>
+                    <span v-if="syncLoading">{{ t('common.connecting') }}</span>
+                    <span v-else>{{ t('settings.sync_connect') }}</span>
                 </button>
             </div>
         </details>
         <details class="mt-1">
-            <summary>Erweiterte Einstellungen</summary>
-            <label for="sync-server-import">Server-Adresse</label>
+            <summary>{{ t('settings.sync_advanced') }}</summary>
+            <label for="sync-server-import">{{ t('settings.sync_server_label') }}</label>
             <input type="text" id="sync-server-import" v-model="syncServerUrl" placeholder="wss://...">
         </details>
-        <button class="secondary outline mt-1" @click="syncState = 'none'">Zurück</button>
+        <button class="secondary outline mt-1" @click="syncState = 'none'">{{ t('common.back') }}</button>
     </div>
 
     <!-- State: QR Scanner -->
@@ -72,75 +82,75 @@
             <video id="qr-video" muted playsinline></video>
             <div class="scanner-overlay"></div>
         </div>
-        <button class="secondary outline" @click="cancelQRScanner()">Abbrechen</button>
+        <button class="secondary outline" @click="cancelQRScanner()">{{ t('common.cancel') }}</button>
     </div>
 
     <!-- State: Active -->
     <div v-if="syncState === 'active'" class="sync-active">
         <p class="sync-status">
-            <span v-if="syncConnected" class="status-connected">● Verbunden</span>
-            <span v-else class="status-disconnected">○ Nicht verbunden</span>
+            <span v-if="syncConnected" class="status-connected">● {{ t('settings.sync_connected') }}</span>
+            <span v-else class="status-disconnected">○ {{ t('settings.sync_disconnected') }}</span>
         </p>
-        <p v-if="syncDecryptError" class="sync-error">Entschlüsselung fehlgeschlagen — falscher Schlüssel?</p>
+        <p v-if="syncDecryptError" class="sync-error">{{ t('settings.sync_decrypt_error') }}</p>
         <div class="settings-actions">
             <button @click="showShareKey()">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 8H21C21.5523 8 22 8.44772 22 9V21C22 21.5523 21.5523 22 21 22H13C12.4477 22 12 21.5523 12 21V20H4C3.44772 20 3 19.5523 3 19V3C3 2.44772 3.44772 2 4 2H18C18.5523 2 19 2.44772 19 3V8ZM17 8V4H5V18H12V9C12 8.44772 12.4477 8 13 8H17ZM14 10V20H20V10H14Z"></path></svg>
-                Weiteres Gerät verbinden
+                {{ t('settings.sync_share_device') }}
             </button>
-            <button class="secondary outline" @click="disableSync()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3.51472 2.10051L22.6066 21.1924L21.1924 22.6066L19.1782 20.5924C18.503 20.8556 17.7684 21 17 21H7C3.68629 21 1 18.3137 1 15C1 12.3846 2.67346 10.16 5.00804 9.33857C5.0027 9.22639 5 9.11351 5 9C5 8.22228 5.12683 7.47418 5.36094 6.77527L2.10051 3.51472L3.51472 2.10051ZM7 9C7 9.08147 7.00193 9.16263 7.00578 9.24344L7.07662 10.7309L5.67183 11.2252C4.0844 11.7837 3 13.2889 3 15C3 17.2091 4.79086 19 7 19H17C17.1858 19 17.3687 18.9873 17.5478 18.9628L7.03043 8.44519C7.01032 8.62736 7 8.81247 7 9ZM12 2C15.866 2 19 5.13401 19 9C19 9.11351 18.9973 9.22639 18.992 9.33857C21.3265 10.16 23 12.3846 23 15C23 16.0883 22.7103 17.1089 22.2037 17.9889L20.7111 16.4955C20.8974 16.0335 21 15.5287 21 15C21 12.79 19.21 11 17 11C16.4711 11 15.9661 11.1027 15.5039 11.2892L14.0111 9.7964C14.8912 9.28978 15.9118 9 17 9C17 6.23858 14.7614 4 12 4C10.9295 4 9.93766 4.33639 9.12428 4.90922L7.69418 3.48056C8.88169 2.55284 10.3763 2 12 2Z"></path></svg> Sync deaktivieren</button>
+            <button class="secondary outline" @click="disableSync()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3.51472 2.10051L22.6066 21.1924L21.1924 22.6066L19.1782 20.5924C18.503 20.8556 17.7684 21 17 21H7C3.68629 21 1 18.3137 1 15C1 12.3846 2.67346 10.16 5.00804 9.33857C5.0027 9.22639 5 9.11351 5 9C5 8.22228 5.12683 7.47418 5.36094 6.77527L2.10051 3.51472L3.51472 2.10051ZM7 9C7 9.08147 7.00193 9.16263 7.00578 9.24344L7.07662 10.7309L5.67183 11.2252C4.0844 11.7837 3 13.2889 3 15C3 17.2091 4.79086 19 7 19H17C17.1858 19 17.3687 18.9873 17.5478 18.9628L7.03043 8.44519C7.01032 8.62736 7 8.81247 7 9ZM12 2C15.866 2 19 5.13401 19 9C19 9.11351 18.9973 9.22639 18.992 9.33857C21.3265 10.16 23 12.3846 23 15C23 16.0883 22.7103 17.1089 22.2037 17.9889L20.7111 16.4955C20.8974 16.0335 21 15.5287 21 15C21 12.79 19.21 11 17 11C16.4711 11 15.9661 11.1027 15.5039 11.2892L14.0111 9.7964C14.8912 9.28978 15.9118 9 17 9C17 6.23858 14.7614 4 12 4C10.9295 4 9.93766 4.33639 9.12428 4.90922L7.69418 3.48056C8.88169 2.55284 10.3763 2 12 2Z"></path></svg> {{ t('settings.sync_disable') }}</button>
         </div>
     </div>
 
     <!-- State: Share key -->
     <div v-if="syncState === 'sharing'" class="sync-share">
-        <p>Scanne diesen QR-Code auf dem anderen Gerät unter <em>„Mit bestehendem Gerät verbinden"</em>.</p>
+        <p>{{ t('settings.sync_share_text') }} <em>{{ t('settings.sync_share_link') }}</em>.</p>
         <div class="qr-display">
             <canvas id="qr-canvas"></canvas>
         </div>
         <div class="sync-key-display">
             <code class="sync-key-text">{{ syncKey }}</code>
-            <button type="button" class="sync-key-copy" @click="shareSyncKey()" title="Kopieren / Teilen">
+            <button type="button" class="sync-key-copy" @click="shareSyncKey()" :title="t('misc.copy_title')">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
                     <path d="M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V21C16.9998 21.5523 16.5521 22 15.9998 22H3.9998C3.44752 22 2.9998 21.5523 2.9998 21V7C2.9998 6.44772 3.44752 6 3.9998 6H6.9998ZM8.9998 6H15.9998C16.5521 6 16.9998 6.44772 16.9998 7V16H18.9998V4H8.9998V6ZM4.9998 8V20H14.9998V8H4.9998Z"></path>
                 </svg>
             </button>
         </div>
         <div class="settings-actions">
-            <button class="secondary outline" @click="backToSyncActive()">Zurück</button>
+            <button class="secondary outline" @click="backToSyncActive()">{{ t('common.back') }}</button>
         </div>
     </div>
 </article>
 
 <article class="settings-section">
     <hgroup>
-        <h4>Spracheingabe</h4>
-        <p>Offline-Spracherkennung für Rezepte und Einkaufsliste.</p>
+        <h4>{{ t('settings.speech_title') }}</h4>
+        <p>{{ t('settings.speech_desc') }}</p>
     </hgroup>
     <div v-if="!speechEnabled">
-        <p class="speech-info">Beim Aktivieren wird einmalig ein deutsches Sprachmodell (~45 MB) heruntergeladen. Danach funktioniert die Erkennung vollständig offline.</p>
+        <p class="speech-info">{{ t('settings.speech_info') }}</p>
         <button @click="enableSpeech()" :disabled="speechLoading">
-            <span v-if="speechLoading && speechProgress > 0 && speechProgress < 100">Lade Modell... {{ speechProgress }}%</span>
-            <span v-else-if="speechLoading && speechProgress >= 100">Initialisiere...</span>
-            <span v-else-if="speechLoading">Verbinde...</span>
-            <span v-else><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0001 3C10.3432 3 9.00008 4.34315 9.00008 6V12C9.00008 13.6569 10.3432 15 12.0001 15C13.6569 15 15.0001 13.6569 15.0001 12V6C15.0001 4.34315 13.6569 3 12.0001 3ZM12.0001 1C14.7615 1 17.0001 3.23858 17.0001 6V12C17.0001 14.7614 14.7615 17 12.0001 17C9.23865 17 7.00008 14.7614 7.00008 12V6C7.00008 3.23858 9.23865 1 12.0001 1ZM2.19238 13.9615L4.15392 13.5692C4.88321 17.2361 8.11888 20 12.0001 20C15.8813 20 19.1169 17.2361 19.8462 13.5692L21.8078 13.9615C20.8961 18.5452 16.8516 22 12.0001 22C7.14858 22 3.104 18.5452 2.19238 13.9615Z"></path></svg> Spracheingabe aktivieren</span>
+            <span v-if="speechLoading && speechProgress > 0 && speechProgress < 100">{{ t('settings.speech_loading_model', { progress: speechProgress }) }}</span>
+            <span v-else-if="speechLoading && speechProgress >= 100">{{ t('settings.speech_initializing') }}</span>
+            <span v-else-if="speechLoading">{{ t('common.connecting') }}</span>
+            <span v-else><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0001 3C10.3432 3 9.00008 4.34315 9.00008 6V12C9.00008 13.6569 10.3432 15 12.0001 15C13.6569 15 15.0001 13.6569 15.0001 12V6C15.0001 4.34315 13.6569 3 12.0001 3ZM12.0001 1C14.7615 1 17.0001 3.23858 17.0001 6V12C17.0001 14.7614 14.7615 17 12.0001 17C9.23865 17 7.00008 14.7614 7.00008 12V6C7.00008 3.23858 9.23865 1 12.0001 1ZM2.19238 13.9615L4.15392 13.5692C4.88321 17.2361 8.11888 20 12.0001 20C15.8813 20 19.1169 17.2361 19.8462 13.5692L21.8078 13.9615C20.8961 18.5452 16.8516 22 12.0001 22C7.14858 22 3.104 18.5452 2.19238 13.9615Z"></path></svg> {{ t('settings.speech_enable') }}</span>
         </button>
         <progress v-if="speechLoading && speechProgress > 0 && speechProgress < 100" :value="speechProgress" max="100"></progress>
     </div>
     <div v-else>
-        <p class="status-connected">Spracheingabe aktiv</p>
-        <button class="secondary outline" @click="disableSpeech()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4249 17.839L21.1925 22.6066L22.6068 21.1924L2.80777 1.3934L1.39355 2.80761L7.00016 8.41421V10C7.00016 12.7614 9.23873 15 12.0002 15C12.4825 15 12.9489 14.9317 13.3902 14.8042L14.9404 16.3544C14.0464 16.7688 13.0503 17 12.0002 17C8.47368 17 5.55627 14.3923 5.07105 11H3.05509C3.51623 15.1716 6.82854 18.4839 11.0002 18.9451V23H13.0002V18.9451C14.2341 18.8087 15.3929 18.4228 16.4249 17.839ZM11.5528 12.9669C10.2541 12.7727 9.22745 11.7461 9.03328 10.4473L11.5528 12.9669ZM19.3747 15.1604L17.9323 13.7179C18.4407 12.9084 18.788 11.9874 18.9293 11H20.9452C20.7754 12.5366 20.2187 13.9565 19.3747 15.1604ZM16.4658 12.2514L14.9173 10.703C14.9715 10.4775 15.0002 10.2421 15.0002 10V6C15.0002 4.34315 13.657 3 12.0002 3C10.7059 3 9.6031 3.81956 9.18237 4.96802L7.68575 3.47139C8.55427 1.99268 10.1613 1 12.0002 1C14.7616 1 17.0002 3.23858 17.0002 6V10C17.0002 10.8099 16.8076 11.5748 16.4658 12.2514Z"></path></svg> Deaktivieren</button>
+        <p class="status-connected">{{ t('settings.speech_active') }}</p>
+        <button class="secondary outline" @click="disableSpeech()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4249 17.839L21.1925 22.6066L22.6068 21.1924L2.80777 1.3934L1.39355 2.80761L7.00016 8.41421V10C7.00016 12.7614 9.23873 15 12.0002 15C12.4825 15 12.9489 14.9317 13.3902 14.8042L14.9404 16.3544C14.0464 16.7688 13.0503 17 12.0002 17C8.47368 17 5.55627 14.3923 5.07105 11H3.05509C3.51623 15.1716 6.82854 18.4839 11.0002 18.9451V23H13.0002V18.9451C14.2341 18.8087 15.3929 18.4228 16.4249 17.839ZM19.3747 15.1604L17.9323 13.7179C18.4407 12.9084 18.788 11.9874 18.9293 11H20.9452C20.7754 12.5366 20.2187 13.9565 19.3747 15.1604ZM16.4658 12.2514L14.9173 10.703C14.9715 10.4775 15.0002 10.2421 15.0002 10V6C15.0002 4.34315 13.657 3 12.0002 3C10.7059 3 9.6031 3.81956 9.18237 4.96802L7.68575 3.47139C8.55427 1.99268 10.1613 1 12.0002 1C14.7616 1 17.0002 3.23858 17.0002 6V10C17.0002 10.8099 16.8076 11.5748 16.4658 12.2514Z"></path></svg> {{ t('settings.speech_disable') }}</button>
     </div>
 </article>
 
 <article class="settings-section">
     <hgroup>
-        <h4>Rezepte verwalten</h4>
-        <p>Backups erstellen und wiederherstellen. Beim Import werden nur neue Rezepte hinzugefügt.</p>
+        <h4>{{ t('settings.recipes_title') }}</h4>
+        <p>{{ t('settings.recipes_desc') }}</p>
     </hgroup>
     <div class="settings-actions">
-        <button class="secondary" @click="exportRecipes()">Exportieren</button>
+        <button class="secondary" @click="exportRecipes()">{{ t('settings.recipes_export') }}</button>
         <label class="secondary" role="button">
-            Importieren
+            {{ t('settings.recipes_import') }}
             <input type="file" accept=".json" @change="importRecipes($event)" hidden>
         </label>
     </div>
@@ -148,39 +158,39 @@
 
 <article class="settings-section">
     <hgroup>
-        <h4>Vordefinierte Rezepte</h4>
-        <p>Eine Vorauswahl an Rezepten importieren. Bestehende Rezepte bleiben erhalten.</p>
+        <h4>{{ t('settings.default_recipes_title') }}</h4>
+        <p>{{ t('settings.default_recipes_desc') }}</p>
     </hgroup>
-    <button class="secondary" @click="loadDefaultRecipes()">Standardrezepte laden</button>
+    <button class="secondary" @click="loadDefaultRecipes()">{{ t('settings.default_recipes_btn') }}</button>
 </article>
 
 <article class="settings-section" v-if="canInstall">
     <hgroup>
-        <h4>App installieren</h4>
-        <p>Installiere die App für schnelleren Zugriff und Offline-Nutzung.</p>
+        <h4>{{ t('settings.install_title') }}</h4>
+        <p>{{ t('settings.install_desc') }}</p>
     </hgroup>
-    <button @click="window.installApp()">App installieren</button>
+    <button @click="window.installApp()">{{ t('settings.install_btn') }}</button>
 </article>
 
 <article class="settings-section danger-zone">
     <hgroup>
-        <h4>Daten zurücksetzen</h4>
-        <p>Alle Rezepte und Wochenpläne werden unwiderruflich gelöscht.</p>
+        <h4>{{ t('settings.reset_title') }}</h4>
+        <p>{{ t('settings.reset_desc') }}</p>
     </hgroup>
-    <button class="secondary" @click="resetAllData()">Alle Daten löschen</button>
+    <button class="secondary" @click="resetAllData()">{{ t('settings.reset_btn') }}</button>
 </article>
 
 <article class="settings-section">
-    <h4>Über die App</h4>
-    <p>Kochplaner - Dein persönlicher Wochenplaner</p>
-    <small>Version 1.5 | Offline-fähig | E2E-verschlüsselt</small>
+    <h4>{{ t('settings.about_title') }}</h4>
+    <p>{{ t('settings.about_text') }}</p>
+    <small>{{ t('settings.about_version') }}</small>
     <p class="storage-status mt-1">
-        <small v-if="storagePersisted" class="status-connected">Persistenter Speicher aktiv — Daten werden vom Browser nicht automatisch gelöscht.</small>
-        <small v-else class="status-disconnected">Kein persistenter Speicher — der Browser könnte bei Speicherknappheit Daten löschen. Installiere die App oder aktiviere Sync als Backup.</small>
+        <small v-if="storagePersisted" class="status-connected">{{ t('settings.storage_persisted') }}</small>
+        <small v-else class="status-disconnected">{{ t('settings.storage_not_persisted') }}</small>
     </p>
 </article>
 
 <article class="settings-section coffee-section">
-    <p>Wenn du willst, kannst du mir gerne einen Kaffee spendieren ;-)</p>
+    <p>{{ t('settings.coffee_text') }}</p>
     <a href="https://www.buymeacoffee.com/miketuxedoo" target="_blank" id="buymeacoffee"><img src="images/qr-code.png" alt="Buy Me A Coffee"></a>
 </article>

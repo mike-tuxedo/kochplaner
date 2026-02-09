@@ -48,7 +48,7 @@
                         d="M9 1V3H15V1H17V3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H7V1H9ZM20 11H4V19H20V11ZM8 14V16H6V14H8ZM18 14V16H10V14H18ZM7 5H4V9H20V5H17V7H15V5H9V7H7V5Z">
                     </path>
                 </svg>
-                <span>Plan</span>
+                <span>{{ t('nav.plan') }}</span>
             </button>
             <button :class="[activePage === 2 ? 'active' : '', theme === 'dark' ? 'outline' : '']"
                 @pointerdown="navigateTo(2)">
@@ -57,7 +57,7 @@
                         d="M14.2683 12.1466L13.4147 13.0002L20.4858 20.0712L19.0716 21.4854L12.0005 14.4144L4.92946 21.4854L3.51525 20.0712L12.854 10.7324C12.2664 9.27549 12.8738 7.17715 14.4754 5.57554C16.428 3.62292 19.119 3.14805 20.4858 4.51488C21.8526 5.88172 21.3778 8.57267 19.4251 10.5253C17.8235 12.1269 15.7252 12.7343 14.2683 12.1466ZM4.22235 3.80777L10.9399 10.5253L8.11144 13.3537L4.22235 9.46463C2.66026 7.90253 2.66026 5.36987 4.22235 3.80777Z">
                     </path>
                 </svg>
-                <span>Rezepte</span>
+                <span>{{ t('nav.recipes') }}</span>
             </button>
             <button :class="[activePage === 3 ? 'active' : '', theme === 'dark' ? 'outline' : '']"
                 @pointerdown="navigateTo(3)">
@@ -66,7 +66,7 @@
                         d="M12.0049 2C15.3186 2 18.0049 4.68629 18.0049 8V9H22.0049V11H20.8379L20.0813 20.083C20.0381 20.6013 19.6048 21 19.0847 21H4.92502C4.40493 21 3.97166 20.6013 3.92847 20.083L3.17088 11H2.00488V9H6.00488V8C6.00488 4.68629 8.69117 2 12.0049 2ZM18.8379 11H5.17088L5.84502 19H18.1647L18.8379 11ZM12.0049 4C9.86269 4 8.1138 5.68397 8.00978 7.80036L8.00488 8V9H16.0049V8C16.0049 5.8578 14.3209 4.10892 12.2045 4.0049L12.0049 4Z">
                     </path>
                 </svg>
-                <span>Einkauf</span>
+                <span>{{ t('nav.shopping') }}</span>
             </button>
             <button :class="[activePage === 4 ? 'active' : '', theme === 'dark' ? 'outline' : '']"
                 @pointerdown="navigateTo(4)">
@@ -75,47 +75,47 @@
                         d="M12 1L20.2169 6.5V17.5L12 23L3.78314 17.5V6.5L12 1ZM12 3.311L5.78314 7.65311V16.3469L12 20.689L18.2169 16.3469V7.65311L12 3.311ZM12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12C16 14.2091 14.2091 16 12 16ZM12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z">
                     </path>
                 </svg>
-                <span>Mehr</span>
+                <span>{{ t('nav.more') }}</span>
             </button>
         </div>
     </footer>
 
     <!-- Drawer: Rezeptauswahl für Wochenplan -->
     <app-drawer id="recipeSelectDrawer" class="pico" :data-color="theme">
-        <h3>Rezept auswählen</h3>
+        <h3>{{ t('form.select_recipe') }}</h3>
         <div class="drawer-recipe-list">
             <div v-for="recipe in recipes" :key="recipe.id" class="drawer-recipe-item"
                 @click="selectRecipeForDay(recipe.id)" close-drawer>
                 {{ recipe.name }}
             </div>
         </div>
-        <button class="secondary mt-1" close-drawer>Abbrechen</button>
+        <button class="secondary mt-1" close-drawer>{{ t('common.cancel') }}</button>
     </app-drawer>
 
     <!-- Drawer: Rezept bearbeiten/erstellen -->
     <app-drawer id="recipeEditDrawer" class="pico" :data-color="theme">
-        <h3>{{ editingRecipe?.id ? 'Rezept bearbeiten' : 'Neues Rezept' }}</h3>
+        <h3>{{ editingRecipe?.id ? t('form.edit_recipe') : t('form.new_recipe') }}</h3>
         <div v-if="editingRecipe" class="recipe-form">
             <label>
-                Rezeptname
+                {{ t('form.recipe_name') }}
                 <div role="group">
-                    <input type="text" v-model="editingRecipe.name" placeholder="z.B. Spaghetti Bolognese">
-                    <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'recipeName', loading: speechLoading }" @click="toggleSpeechListening('recipeName')" title="Spracheingabe"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0001 3C10.3432 3 9.00008 4.34315 9.00008 6V12C9.00008 13.6569 10.3432 15 12.0001 15C13.6569 15 15.0001 13.6569 15.0001 12V6C15.0001 4.34315 13.6569 3 12.0001 3ZM12.0001 1C14.7615 1 17.0001 3.23858 17.0001 6V12C17.0001 14.7614 14.7615 17 12.0001 17C9.23865 17 7.00008 14.7614 7.00008 12V6C7.00008 3.23858 9.23865 1 12.0001 1ZM2.19238 13.9615L4.15392 13.5692C4.88321 17.2361 8.11888 20 12.0001 20C15.8813 20 19.1169 17.2361 19.8462 13.5692L21.8078 13.9615C20.8961 18.5452 16.8516 22 12.0001 22C7.14858 22 3.104 18.5452 2.19238 13.9615Z"></path></svg></button>
+                    <input type="text" v-model="editingRecipe.name" :placeholder="t('form.recipe_name_placeholder')">
+                    <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'recipeName', loading: speechLoading }" @click="toggleSpeechListening('recipeName')" :title="t('form.speech_input')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0001 3C10.3432 3 9.00008 4.34315 9.00008 6V12C9.00008 13.6569 10.3432 15 12.0001 15C13.6569 15 15.0001 13.6569 15.0001 12V6C15.0001 4.34315 13.6569 3 12.0001 3ZM12.0001 1C14.7615 1 17.0001 3.23858 17.0001 6V12C17.0001 14.7614 14.7615 17 12.0001 17C9.23865 17 7.00008 14.7614 7.00008 12V6C7.00008 3.23858 9.23865 1 12.0001 1ZM2.19238 13.9615L4.15392 13.5692C4.88321 17.2361 8.11888 20 12.0001 20C15.8813 20 19.1169 17.2361 19.8462 13.5692L21.8078 13.9615C20.8961 18.5452 16.8516 22 12.0001 22C7.14858 22 3.104 18.5452 2.19238 13.9615Z"></path></svg></button>
                 </div>
             </label>
             <div v-if="speechListening && speechTarget === 'recipeName' && speechPartial" class="speech-partial">{{ speechPartial }}</div>
 
             <label>
-                Zubereitung <small>(optional)</small>
+                {{ t('form.description') }} <small>{{ t('form.description_optional') }}</small>
                 <div class="textarea-with-mic">
                     <textarea v-model="editingRecipe.description"
-                        placeholder="Kurze Beschreibung oder Notizen zum Rezept..." rows="10"></textarea>
-                    <button type="button" v-if="speechEnabled" class="mic-btn textarea-mic" :class="{ active: speechListening && speechTarget === 'description', loading: speechLoading }" @click="toggleSpeechListening('description')" title="Spracheingabe"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0001 3C10.3432 3 9.00008 4.34315 9.00008 6V12C9.00008 13.6569 10.3432 15 12.0001 15C13.6569 15 15.0001 13.6569 15.0001 12V6C15.0001 4.34315 13.6569 3 12.0001 3ZM12.0001 1C14.7615 1 17.0001 3.23858 17.0001 6V12C17.0001 14.7614 14.7615 17 12.0001 17C9.23865 17 7.00008 14.7614 7.00008 12V6C7.00008 3.23858 9.23865 1 12.0001 1ZM2.19238 13.9615L4.15392 13.5692C4.88321 17.2361 8.11888 20 12.0001 20C15.8813 20 19.1169 17.2361 19.8462 13.5692L21.8078 13.9615C20.8961 18.5452 16.8516 22 12.0001 22C7.14858 22 3.104 18.5452 2.19238 13.9615Z"></path></svg></button>
+                        :placeholder="t('form.description_placeholder')" rows="10"></textarea>
+                    <button type="button" v-if="speechEnabled" class="mic-btn textarea-mic" :class="{ active: speechListening && speechTarget === 'description', loading: speechLoading }" @click="toggleSpeechListening('description')" :title="t('form.speech_input')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0001 3C10.3432 3 9.00008 4.34315 9.00008 6V12C9.00008 13.6569 10.3432 15 12.0001 15C13.6569 15 15.0001 13.6569 15.0001 12V6C15.0001 4.34315 13.6569 3 12.0001 3ZM12.0001 1C14.7615 1 17.0001 3.23858 17.0001 6V12C17.0001 14.7614 14.7615 17 12.0001 17C9.23865 17 7.00008 14.7614 7.00008 12V6C7.00008 3.23858 9.23865 1 12.0001 1ZM2.19238 13.9615L4.15392 13.5692C4.88321 17.2361 8.11888 20 12.0001 20C15.8813 20 19.1169 17.2361 19.8462 13.5692L21.8078 13.9615C20.8961 18.5452 16.8516 22 12.0001 22C7.14858 22 3.104 18.5452 2.19238 13.9615Z"></path></svg></button>
                 </div>
             </label>
             <div v-if="speechListening && speechTarget === 'description' && speechPartial" class="speech-partial">{{ speechPartial }}</div>
 
-            <label>Foto <small>(optional)</small></label>
+            <label>{{ t('form.photo') }} <small>{{ t('form.photo_optional') }}</small></label>
             <div class="recipe-photo-upload">
                 <div v-if="editingRecipe.photo" class="photo-preview">
                     <img :src="editingRecipe.photo" alt="Rezeptfoto">
@@ -128,18 +128,18 @@
                             d="M21 15V18H24V20H21V23H19V20H16V18H19V15H21ZM21.0082 3C21.556 3 22 3.44495 22 3.9934V13H20V5H4V18.999L14 9L17 12V14.829L14 11.8284L6.827 19H14V21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H21.0082ZM8 7C9.10457 7 10 7.89543 10 9C10 10.1046 9.10457 11 8 11C6.89543 11 6 10.1046 6 9C6 7.89543 6.89543 7 8 7Z">
                         </path>
                     </svg>
-                    Foto hinzufügen
+                    {{ t('form.photo_add') }}
                     <input type="file" accept="image/*" @change="handlePhotoUpload($event)" hidden>
                 </label>
             </div>
 
-            <label>Zutaten</label>
+            <label>{{ t('form.ingredients') }}</label>
             <div class="ingredients-list">
                 <div v-for="(ing, idx) in editingRecipe.ingredients" :key="idx" class="ingredient-row-outer">
                     <div class="ingredient-row-inner">
-                        <input type="text" v-model="ing.name" placeholder="Zutat">
-                        <input type="number" v-model="ing.amount" placeholder="Menge" step="0.1">
-                        <input type="text" v-model="ing.unit" placeholder="Einheit">
+                        <input type="text" v-model="ing.name" :placeholder="t('form.ingredient_placeholder')">
+                        <input type="number" v-model="ing.amount" :placeholder="t('form.amount_placeholder')" step="0.1">
+                        <input type="text" v-model="ing.unit" :placeholder="t('form.unit_placeholder')">
                     </div>
                     <button type="button" class="contrast ingredient-delete btn-small"
                         :class="{ outline: theme === 'dark' }" @click="removeIngredient(idx)">−</button>
@@ -147,23 +147,23 @@
             </div>
             <div class="add-ingredient-actions">
                 <button type="button" class="secondary add-ingredient-btn" :class="{ outline: theme === 'dark' }"
-                    @click="addIngredient()">+ Zutat</button>
-                <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'ingredient', loading: speechLoading }" @click="toggleSpeechListening('ingredient')" title="Zutat einsprechen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0001 3C10.3432 3 9.00008 4.34315 9.00008 6V12C9.00008 13.6569 10.3432 15 12.0001 15C13.6569 15 15.0001 13.6569 15.0001 12V6C15.0001 4.34315 13.6569 3 12.0001 3ZM12.0001 1C14.7615 1 17.0001 3.23858 17.0001 6V12C17.0001 14.7614 14.7615 17 12.0001 17C9.23865 17 7.00008 14.7614 7.00008 12V6C7.00008 3.23858 9.23865 1 12.0001 1ZM2.19238 13.9615L4.15392 13.5692C4.88321 17.2361 8.11888 20 12.0001 20C15.8813 20 19.1169 17.2361 19.8462 13.5692L21.8078 13.9615C20.8961 18.5452 16.8516 22 12.0001 22C7.14858 22 3.104 18.5452 2.19238 13.9615Z"></path></svg></button>
+                    @click="addIngredient()">{{ t('form.add_ingredient') }}</button>
+                <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'ingredient', loading: speechLoading }" @click="toggleSpeechListening('ingredient')" :title="t('form.speak_ingredient')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0001 3C10.3432 3 9.00008 4.34315 9.00008 6V12C9.00008 13.6569 10.3432 15 12.0001 15C13.6569 15 15.0001 13.6569 15.0001 12V6C15.0001 4.34315 13.6569 3 12.0001 3ZM12.0001 1C14.7615 1 17.0001 3.23858 17.0001 6V12C17.0001 14.7614 14.7615 17 12.0001 17C9.23865 17 7.00008 14.7614 7.00008 12V6C7.00008 3.23858 9.23865 1 12.0001 1ZM2.19238 13.9615L4.15392 13.5692C4.88321 17.2361 8.11888 20 12.0001 20C15.8813 20 19.1169 17.2361 19.8462 13.5692L21.8078 13.9615C20.8961 18.5452 16.8516 22 12.0001 22C7.14858 22 3.104 18.5452 2.19238 13.9615Z"></path></svg></button>
             </div>
             <div v-if="speechListening && speechTarget === 'ingredient' && speechPartial" class="speech-partial">{{ speechPartial }}</div>
 
             <div class="form-actions">
-                <button type="button" class="secondary" @click="cancelEdit()">Abbrechen</button>
-                <button type="button" @click="saveRecipe()">Speichern</button>
+                <button type="button" class="secondary" @click="cancelEdit()">{{ t('common.cancel') }}</button>
+                <button type="button" @click="saveRecipe()">{{ t('common.save') }}</button>
             </div>
         </div>
     </app-drawer>
 
     <!-- Drawer: Rezeptvorschlag -->
     <app-drawer id="suggestionDrawer" class="pico" :data-color="theme">
-        <h3>Rezeptidee</h3>
+        <h3>{{ t('suggestion.title') }}</h3>
         <div v-if="suggestionLoading" class="suggestion-loading" aria-busy="true">
-            <p>Lade Rezeptidee...</p>
+            <p>{{ t('suggestion.loading') }}</p>
         </div>
         <div v-else-if="suggestedRecipe" class="suggestion-content">
             <div class="suggestion-card" :class="{ 'has-photo': suggestedRecipe.photo }">
@@ -173,7 +173,7 @@
                     <p v-if="suggestedRecipe.description" class="suggestion-description">{{ suggestedRecipe.description
                         }}</p>
                     <details>
-                        <summary>{{ suggestedRecipe.ingredients.length }} Zutaten</summary>
+                        <summary>{{ t('suggestion.ingredients_count', { count: suggestedRecipe.ingredients.length }) }}</summary>
                         <ul class="ingredients">
                             <li v-for="ing in suggestedRecipe.ingredients" :key="ing.name">
                                 {{ ing.amount }} {{ ing.unit }} {{ ing.name }}
@@ -190,7 +190,7 @@
                             d="M5.46257 4.43262C7.21556 2.91688 9.5007 2 12 2C17.5228 2 22 6.47715 22 12C22 14.1361 21.3302 16.1158 20.1892 17.7406L17 12H20C20 7.58172 16.4183 4 12 4C9.84982 4 7.89777 4.84827 6.46023 6.22842L5.46257 4.43262ZM18.5374 19.5674C16.7844 21.0831 14.4993 22 12 22C6.47715 22 2 17.5228 2 12C2 9.86386 2.66979 7.88416 3.8108 6.25944L7 12H4C4 16.4183 7.58172 20 12 20C14.1502 20 16.1022 19.1517 17.5398 17.7716L18.5374 19.5674Z">
                         </path>
                     </svg>
-                    Andere Idee
+                    {{ t('suggestion.another') }}
                 </button>
                 <button @click="adoptSuggestion()">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18"
@@ -199,12 +199,12 @@
                             d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM11 11H7V13H11V17H13V13H17V11H13V7H11V11Z">
                         </path>
                     </svg>
-                    Übernehmen
+                    {{ t('suggestion.adopt') }}
                 </button>
             </div>
         </div>
         <div v-else class="empty-state">
-            <p>Lade Rezeptvorschlag...</p>
+            <p>{{ t('suggestion.fallback_loading') }}</p>
         </div>
     </app-drawer>
 

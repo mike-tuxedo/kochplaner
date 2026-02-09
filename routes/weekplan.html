@@ -1,10 +1,10 @@
 <div class="page-header">
-    <h2>Wochenplan</h2>
+    <h2>{{ t('weekplan.title') }}</h2>
     <div class="page-header-actions">
-        <button class="btn-icon" v-if="weekplan" @click="generateNewWeek()" title="Neu generieren">
+        <button class="btn-icon" v-if="weekplan" @click="generateNewWeek()" :title="t('weekplan.regenerate_title')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5.46257 4.43262C7.21556 2.91688 9.5007 2 12 2C17.5228 2 22 6.47715 22 12C22 14.1361 21.3302 16.1158 20.1892 17.7406L17 12H20C20 7.58172 16.4183 4 12 4C9.84982 4 7.89777 4.84827 6.46023 6.22842L5.46257 4.43262ZM18.5374 19.5674C16.7844 21.0831 14.4993 22 12 22C6.47715 22 2 17.5228 2 12C2 9.86386 2.66979 7.88416 3.8108 6.25944L7 12H4C4 16.4183 7.58172 20 12 20C14.1502 20 16.1022 19.1517 17.5398 17.7716L18.5374 19.5674Z"></path></svg>
         </button>
-        <button class="btn-icon" @click="showSharePopup()" title="Teilen">
+        <button class="btn-icon" @click="showSharePopup()" :title="t('weekplan.share_title')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M13.1202 17.0228L8.92129 14.7324C8.19135 15.5125 7.15261 16 6 16C3.79086 16 2 14.2091 2 12C2 9.79086 3.79086 8 6 8C7.15255 8 8.19125 8.48746 8.92118 9.26746L13.1202 6.97713C13.0417 6.66441 13 6.33707 13 6C13 3.79086 14.7909 2 17 2C19.2091 2 21 3.79086 21 6C21 8.20914 19.2091 10 17 10C15.8474 10 14.8087 9.51251 14.0787 8.73246L9.87977 11.0228C9.9583 11.3355 10 11.6629 10 12C10 12.3371 9.95831 12.6644 9.87981 12.9771L14.0788 15.2675C14.8087 14.4875 15.8474 14 17 14C19.2091 14 21 15.7909 21 18C21 20.2091 19.2091 22 17 22C14.7909 22 13 20.2091 13 18C13 17.6629 13.0417 17.3355 13.1202 17.0228Z"></path></svg>
         </button>
     </div>
@@ -13,30 +13,30 @@
 <!-- Kein Wochenplan: Onboarding -->
 <article v-if="!weekplan" class="text-left">
     <hgroup>
-        <h2>Willkommen beim Kochplaner!</h2>
+        <h2>{{ t('weekplan.welcome_title') }}</h2>
     </hgroup>
     <hr>
-    <p class="text-primary"><b>In 3 Schritten zu deinem Wochenplan:</b></p>
+    <p class="text-primary"><b>{{ t('weekplan.steps_title') }}</b></p>
     <ol class="mb-4">
-        <li>Füge deine Lieblingsrezepte hinzu</li>
-        <li>Generiere einen Wochenplan</li>
-        <li>Erstelle deine Einkaufsliste</li>
+        <li>{{ t('weekplan.step1') }}</li>
+        <li>{{ t('weekplan.step2') }}</li>
+        <li>{{ t('weekplan.step3') }}</li>
     </ol>
 </article>
 <article class="init-content-1 text-center" v-if="recipes.length === 0">
-    <h3 class="mb-0">Also, LOS GEHTs!</h3>
-    <p class="mb-0">Du hast noch keine Rezepte.<br>Bevor du einen Wochenplan erstellen kannst, brauchst du Rezepte.</p>
-    <p><button class="" @click="navigateTo(2)">Leg jetzt ganz einfach die ersten Rezepte an!</button></p>
+    <h3 class="mb-0">{{ t('weekplan.no_recipes_title') }}</h3>
+    <p class="mb-0">{{ t('weekplan.no_recipes_text') }}</p>
+    <p><button class="" @click="navigateTo(2)">{{ t('weekplan.no_recipes_cta') }}</button></p>
 </article>
 
 <article class="grid" v-if="recipes.length !== 0 && !weekplan">
-    <h3 class="mb-0">Super, du hast die ersten Rezepte!</h3>
-    <p>Du kannst jetzt deinen Wochenplan erstellen lassen</p>
-    <small><b>Kleiner Tipp:</b> Um so mehr Rezepte umso abwechslungsreicher kann der Plan werden.
-        Wenn du noch Inspiration brauchst dann schau bei der <button class="btn-small" @click="navigateTo(2)">Rezeptseite</button> nach und klicke dort einfach auf <b>Rezeptidee</b>.
+    <h3 class="mb-0">{{ t('weekplan.has_recipes_title') }}</h3>
+    <p>{{ t('weekplan.has_recipes_text') }}</p>
+    <small><b>{{ t('weekplan.has_recipes_tip') }}</b> {{ t('weekplan.has_recipes_tip_text') }}
+        <button class="btn-small" @click="navigateTo(2)">{{ t('weekplan.has_recipes_tip_link') }}</button> {{ t('weekplan.has_recipes_tip_suffix') }} <b>{{ t('weekplan.has_recipes_tip_bold') }}</b>.
     </small>
     <hr>
-    <button :class="{ outline: theme === 'dark' }" @click="generateNewWeek()">Wochenplan erstellen</button>
+    <button :class="{ outline: theme === 'dark' }" @click="generateNewWeek()">{{ t('weekplan.create_plan') }}</button>
 </article>
 
 <!-- Wochenplan vorhanden -->
@@ -51,11 +51,11 @@
             <h4 class="recipe-name" v-if="getRecipeById(day.recipeId)">
                 {{ getRecipeById(day.recipeId)?.name }}
             </h4>
-            <p v-else><em>Kein Rezept</em></p>
+            <p v-else><em>{{ t('weekplan.no_recipe') }}</em></p>
         </div>
 
         <details class="mb-0" v-if="getRecipeById(day.recipeId)" @click.stop>
-            <summary>Zutaten</summary>
+            <summary>{{ t('weekplan.ingredients') }}</summary>
             <ul>
                 <li v-for="ing in getRecipeById(day.recipeId)?.ingredients || []">
                     {{ ing.amount }} {{ ing.unit }} {{ ing.name }}

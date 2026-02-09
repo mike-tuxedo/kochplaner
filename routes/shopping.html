@@ -1,11 +1,11 @@
 <div class="page-header">
-    <h2>Einkaufsliste</h2>
+    <h2>{{ t('shopping.title') }}</h2>
     <div class="page-header-actions">
-        <button class="btn-icon" v-if="shoppingList.length > 0" :class="{ active: shoppingEditMode }" @click="shoppingEditMode = !shoppingEditMode" title="Bearbeiten">
+        <button class="btn-icon" v-if="shoppingList.length > 0" :class="{ active: shoppingEditMode }" @click="shoppingEditMode = !shoppingEditMode" :title="t('shopping.edit_title')">
             <svg v-if="!shoppingEditMode" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5 18.89H6.41421L15.7279 9.57627L14.3137 8.16206L5 17.4758V18.89ZM21 20.89H3V16.6473L16.435 3.21231C16.8256 2.82179 17.4587 2.82179 17.8492 3.21231L20.6777 6.04074C21.0682 6.43126 21.0682 7.06443 20.6777 7.45495L9.24264 18.89H21V20.89ZM15.7279 6.74785L17.1421 8.16206L18.5563 6.74785L17.1421 5.33363L15.7279 6.74785Z"></path></svg>
             <svg v-if="shoppingEditMode" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9.9997 15.1709L19.1921 5.97852L20.6063 7.39273L9.9997 17.9993L3.63574 11.6354L5.04996 10.2212L9.9997 15.1709Z"></path></svg>
         </button>
-        <button class="btn-icon" @click="showSharePopup()" title="Teilen">
+        <button class="btn-icon" @click="showSharePopup()" :title="t('common.share')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M13.1202 17.0228L8.92129 14.7324C8.19135 15.5125 7.15261 16 6 16C3.79086 16 2 14.2091 2 12C2 9.79086 3.79086 8 6 8C7.15255 8 8.19125 8.48746 8.92118 9.26746L13.1202 6.97713C13.0417 6.66441 13 6.33707 13 6C13 3.79086 14.7909 2 17 2C19.2091 2 21 3.79086 21 6C21 8.20914 19.2091 10 17 10C15.8474 10 14.8087 9.51251 14.0787 8.73246L9.87977 11.0228C9.9583 11.3355 10 11.6629 10 12C10 12.3371 9.95831 12.6644 9.87981 12.9771L14.0788 15.2675C14.8087 14.4875 15.8474 14 17 14C19.2091 14 21 15.7909 21 18C21 20.2091 19.2091 22 17 22C14.7909 22 13 20.2091 13 18C13 17.6629 13.0417 17.3355 13.1202 17.0228Z"></path></svg>
         </button>
     </div>
@@ -14,8 +14,8 @@
 <!-- Eintrag hinzufuegen -->
 <div class="shopping-add">
     <form @submit.prevent="addShoppingItem()" role="group">
-        <input type="text" v-model="newShoppingItem" placeholder="Eintrag hinzufuegen...">
-        <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'shopping' }" @click="toggleSpeechListening('shopping')" title="Spracheingabe"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0001 3C10.3432 3 9.00008 4.34315 9.00008 6V12C9.00008 13.6569 10.3432 15 12.0001 15C13.6569 15 15.0001 13.6569 15.0001 12V6C15.0001 4.34315 13.6569 3 12.0001 3ZM12.0001 1C14.7615 1 17.0001 3.23858 17.0001 6V12C17.0001 14.7614 14.7615 17 12.0001 17C9.23865 17 7.00008 14.7614 7.00008 12V6C7.00008 3.23858 9.23865 1 12.0001 1ZM2.19238 13.9615L4.15392 13.5692C4.88321 17.2361 8.11888 20 12.0001 20C15.8813 20 19.1169 17.2361 19.8462 13.5692L21.8078 13.9615C20.8961 18.5452 16.8516 22 12.0001 22C7.14858 22 3.104 18.5452 2.19238 13.9615Z"></path></svg></button>
+        <input type="text" v-model="newShoppingItem" :placeholder="t('shopping.add_placeholder')">
+        <button type="button" v-if="speechEnabled" class="mic-btn" :class="{ active: speechListening && speechTarget === 'shopping' }" @click="toggleSpeechListening('shopping')" :title="t('form.speech_input')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0001 3C10.3432 3 9.00008 4.34315 9.00008 6V12C9.00008 13.6569 10.3432 15 12.0001 15C13.6569 15 15.0001 13.6569 15.0001 12V6C15.0001 4.34315 13.6569 3 12.0001 3ZM12.0001 1C14.7615 1 17.0001 3.23858 17.0001 6V12C17.0001 14.7614 14.7615 17 12.0001 17C9.23865 17 7.00008 14.7614 7.00008 12V6C7.00008 3.23858 9.23865 1 12.0001 1ZM2.19238 13.9615L4.15392 13.5692C4.88321 17.2361 8.11888 20 12.0001 20C15.8813 20 19.1169 17.2361 19.8462 13.5692L21.8078 13.9615C20.8961 18.5452 16.8516 22 12.0001 22C7.14858 22 3.104 18.5452 2.19238 13.9615Z"></path></svg></button>
         <button type="submit" :disabled="!newShoppingItem.trim()">+</button>
     </form>
     <div v-if="speechListening && speechTarget === 'shopping' && speechPartial" class="speech-partial">{{ speechPartial }}</div>
@@ -23,13 +23,13 @@
 
 <!-- Hinweis bei leerer Liste -->
 <div v-if="shoppingList.length === 0" class="shopping-empty-hint">
-    <p>Deine Einkaufsliste ist leer.</p>
-    <p>Du kannst oben eigene Einträge hinzufügen oder über den <button class="btn-small" @click="navigateTo(1)">Wochenplan</button> automatisch eine Einkaufsliste erstellen lassen.</p>
+    <p>{{ t('shopping.empty_text') }}</p>
+    <p>{{ t('shopping.empty_hint') }} <button class="btn-small" @click="navigateTo(1)">{{ t('shopping.empty_hint_link') }}</button> {{ t('shopping.empty_hint_suffix') }}</p>
 </div>
 
 <!-- Einkaufsliste -->
 <article v-if="shoppingList.length > 0" :class="{ 'shopping-edit-mode': shoppingEditMode }">
-    <small class="shopping-hint">Tipp: Lange auf einen Eintrag drucken, um ihn zu verschieben</small>
+    <small class="shopping-hint">{{ t('shopping.drag_hint') }}</small>
     <div class="shopping-list" @dragleave="onDragLeave($event)">
         <div class="separator" :class="{ active: dragOverIndex === -1 }"></div>
         <div v-for="(item, index) in shoppingList" :key="index"
@@ -53,19 +53,19 @@
                         <div class="amount" v-if="item.amount || item.unit">{{ item.amount }} {{ item.unit }}</div>
                     </label>
                     <div class="item-actions">
-                        <button class="btn-icon" @click="startEditItem(index)" title="Bearbeiten"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5 18.89H6.41421L15.7279 9.57627L14.3137 8.16206L5 17.4758V18.89ZM21 20.89H3V16.6473L16.435 3.21231C16.8256 2.82179 17.4587 2.82179 17.8492 3.21231L20.6777 6.04074C21.0682 6.43126 21.0682 7.06443 20.6777 7.45495L9.24264 18.89H21V20.89ZM15.7279 6.74785L17.1421 8.16206L18.5563 6.74785L17.1421 5.33363L15.7279 6.74785Z"></path></svg></button>
-                        <button class="btn-icon btn-delete" @click="removeShoppingItem(index)" title="Loeschen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8ZM6 10V20H18V10H6ZM9 12H11V18H9V12ZM13 12H15V18H13V12ZM7 5V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V5H22V7H2V5H7ZM9 4V5H15V4H9Z"></path></svg></button>
+                        <button class="btn-icon" @click="startEditItem(index)" :title="t('common.edit')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5 18.89H6.41421L15.7279 9.57627L14.3137 8.16206L5 17.4758V18.89ZM21 20.89H3V16.6473L16.435 3.21231C16.8256 2.82179 17.4587 2.82179 17.8492 3.21231L20.6777 6.04074C21.0682 6.43126 21.0682 7.06443 20.6777 7.45495L9.24264 18.89H21V20.89ZM15.7279 6.74785L17.1421 8.16206L18.5563 6.74785L17.1421 5.33363L15.7279 6.74785Z"></path></svg></button>
+                        <button class="btn-icon btn-delete" @click="removeShoppingItem(index)" :title="t('common.delete')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8ZM6 10V20H18V10H6ZM9 12H11V18H9V12ZM13 12H15V18H13V12ZM7 5V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V5H22V7H2V5H7ZM9 4V5H15V4H9Z"></path></svg></button>
                     </div>
                 </template>
 
                 <!-- Edit view -->
                 <template v-else>
                     <form class="item-edit-form" @submit.prevent="saveEditItem(index)">
-                        <input type="text" v-model="editingShoppingText" placeholder="Name" class="edit-name" autofocus>
-                        <input type="number" v-model="editingShoppingAmount" placeholder="Menge" class="edit-amount" step="any">
-                        <input type="text" v-model="editingShoppingUnit" placeholder="Einheit" class="edit-unit">
-                        <button type="submit" class="btn-icon" title="Speichern"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9.9997 15.1709L19.1921 5.97852L20.6063 7.39273L9.9997 17.9993L3.63574 11.6354L5.04996 10.2212L9.9997 15.1709Z"></path></svg></button>
-                        <button type="button" class="btn-icon" @click="cancelEditItem()" title="Abbrechen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8ZM6 10V20H18V10H6ZM9 12H11V18H9V12ZM13 12H15V18H13V12ZM7 5V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V5H22V7H2V5H7ZM9 4V5H15V4H9Z"></path></svg></button>
+                        <input type="text" v-model="editingShoppingText" :placeholder="t('shopping.name_placeholder')" class="edit-name" autofocus>
+                        <input type="number" v-model="editingShoppingAmount" :placeholder="t('shopping.amount_placeholder')" class="edit-amount" step="any">
+                        <input type="text" v-model="editingShoppingUnit" :placeholder="t('shopping.unit_placeholder')" class="edit-unit">
+                        <button type="submit" class="btn-icon" :title="t('common.save')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9.9997 15.1709L19.1921 5.97852L20.6063 7.39273L9.9997 17.9993L3.63574 11.6354L5.04996 10.2212L9.9997 15.1709Z"></path></svg></button>
+                        <button type="button" class="btn-icon" @click="cancelEditItem()" :title="t('common.cancel')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8ZM6 10V20H18V10H6ZM9 12H11V18H9V12ZM13 12H15V18H13V12ZM7 5V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V5H22V7H2V5H7ZM9 4V5H15V4H9Z"></path></svg></button>
                     </form>
                 </template>
             </div>

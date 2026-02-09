@@ -21,7 +21,10 @@ import {
 } from './storage.js';
 import { generateSyncKey, storeSyncKey, loadSyncKey, clearSyncKey } from './crypto.js';
 import { renderQR, startScanner, stopScanner } from './qr.js';
+import { t, getData, getIntlLocale, getLocale, initI18n, setLocale } from './i18n.js';
 
+// Initialize i18n before anything else
+await initI18n();
 
 // Modal helper
 const modal = () => $id('appModal');
@@ -29,9 +32,6 @@ const modal = () => $id('appModal');
 // Load pages first, then initialize store
 await loadPages();
 await initDB();
-
-// Days of week
-const DAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 
 // Hash routing maps (page 0 = welcome, not in hash routing)
 const hashToPage = {
@@ -56,15 +56,15 @@ const showWelcome = !isStandaloneMode && !welcomeSkipped;
 // iOS install instructions helper
 async function showIOSInstallInstructions() {
     await modal().custom({
-        title: 'App installieren',
+        title: t('welcome.ios_install_title'),
         html: `
-            <p><strong>So installierst du auf iOS:</strong></p>
+            <p><strong>${t('welcome.ios_install_steps')}</strong></p>
             <ol style="margin: 0.5rem 0; padding-left: 1.5rem;">
-                <li>Tippe auf das Teilen-Symbol <span style="font-size: 1.1em;">&#9094;</span></li>
-                <li>Scrolle und wähle "Zum Home-Bildschirm"</li>
+                <li>${t('welcome.ios_install_step1')} <span style="font-size: 1.1em;">&#9094;</span></li>
+                <li>${t('welcome.ios_install_step2')}</li>
             </ol>
         `,
-        confirmText: 'Verstanden',
+        confirmText: t('common.understood'),
         showCancel: false
     });
 }
@@ -136,10 +136,18 @@ const store = reactive({
     editingRecipe: null,
     selectedDayIndex: null,
 
+    // i18n
+    t,
+    getData,
+    locale: getLocale(),
+    changeLocale(locale) {
+        setLocale(locale);
+    },
+
     // Format date helper
     formatDate(isoDate) {
         const date = new Date(isoDate);
-        return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+        return date.toLocaleDateString(getIntlLocale(), { day: '2-digit', month: '2-digit' });
     },
 
     // Get recipe by ID
@@ -186,7 +194,7 @@ const store = reactive({
 
     async saveRecipe() {
         if (!this.editingRecipe.name.trim()) {
-            await modal().alert('Bitte gib einen Rezeptnamen ein.');
+            await modal().alert(t('form.recipe_name_required'));
             return;
         }
 
@@ -209,7 +217,7 @@ const store = reactive({
     },
 
     async deleteRecipe(id) {
-        if (await modal().confirm('Rezept wirklich löschen?')) {
+        if (await modal().confirm(t('recipes.delete_confirm'))) {
             await deleteRecipeFromDB(id);
 
             // Sync if enabled
@@ -246,8 +254,8 @@ const store = reactive({
         if (!file) return;
 
         const confirmed = await modal().confirm(
-            'Rezepte importieren?',
-            'Deine vorhandenen Rezepte bleiben erhalten. Neue Rezepte werden hinzugefügt.'
+            t('settings.recipes_import_confirm'),
+            t('settings.recipes_import_desc')
         );
         if (!confirmed) {
             event.target.value = '';
@@ -260,7 +268,7 @@ const store = reactive({
                 // When sync is active, save to syncManager in batch mode
                 const text = await file.text();
                 const recipes = JSON.parse(text);
-                if (!Array.isArray(recipes)) throw new Error('Ungültiges Format');
+                if (!Array.isArray(recipes)) throw new Error(t('misc.invalid_format'));
                 count = 0;
                 window.syncManager.beginBatch();
                 for (const recipe of recipes) {
@@ -275,18 +283,18 @@ const store = reactive({
             } else {
                 count = await importRecipesFromFile(file);
             }
-            await modal().alert(`${count} Rezept(e) erfolgreich importiert!`);
+            await modal().alert(t('settings.recipes_import_success', { count }));
             await this.loadRecipes();
         } catch (err) {
-            await modal().alert('Fehler beim Import: ' + err.message);
+            await modal().alert(t('settings.recipes_import_error') + err.message);
         }
         event.target.value = '';
     },
 
     async loadDefaultRecipes() {
         const confirmed = await modal().confirm(
-            'Standardrezepte laden?',
-            'Deine vorhandenen Rezepte bleiben erhalten. Neue Rezepte werden hinzugefügt.'
+            t('settings.default_recipes_confirm'),
+            t('settings.default_recipes_desc2')
         );
         if (!confirmed) return;
 
@@ -294,9 +302,9 @@ const store = reactive({
             if (window.syncManager?.isInitialized) {
                 // When sync is active, save to syncManager in batch mode
                 const response = await fetch('rezepte-export.json');
-                if (!response.ok) throw new Error('Datei nicht gefunden');
+                if (!response.ok) throw new Error(t('misc.file_not_found'));
                 const recipes = await response.json();
-                if (!Array.isArray(recipes)) throw new Error('Ungültiges Format');
+                if (!Array.isArray(recipes)) throw new Error(t('misc.invalid_format'));
                 let imported = 0;
                 window.syncManager.beginBatch();
                 for (const recipe of recipes) {
@@ -308,21 +316,21 @@ const store = reactive({
                     }
                 }
                 window.syncManager.endBatch();
-                await modal().alert(`${imported} Standardrezept(e) erfolgreich geladen!`);
+                await modal().alert(t('settings.default_recipes_success', { count: imported }));
             } else {
                 const count = await loadDefaultRecipesFromDB();
-                await modal().alert(`${count} Standardrezept(e) erfolgreich geladen!`);
+                await modal().alert(t('settings.default_recipes_success', { count }));
             }
             await this.loadRecipes();
         } catch (err) {
-            await modal().alert('Fehler: ' + err.message);
+            await modal().alert(t('common.error') + ': ' + err.message);
         }
     },
 
     async resetAllData() {
         const confirmed = await modal().confirm(
-            'Wirklich alle Daten löschen?',
-            'Alle Rezepte und Wochenpläne werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden!'
+            t('settings.reset_confirm'),
+            t('settings.reset_confirm_desc')
         );
         if (!confirmed) return;
 
@@ -356,9 +364,9 @@ const store = reactive({
             this.customShoppingItems = [];
 
             await this.generateShoppingList();
-            await modal().alert('Alle Daten wurden gelöscht.');
+            await modal().alert(t('settings.reset_success'));
         } catch (err) {
-            await modal().alert('Fehler: ' + err.message);
+            await modal().alert(t('common.error') + ': ' + err.message);
         }
     },
 
@@ -376,7 +384,7 @@ const store = reactive({
             this.editingRecipe.photo = compressedBase64;
         } catch (err) {
             console.error('Fehler beim Bildupload:', err);
-            await modal().alert('Fehler beim Verarbeiten des Bildes.');
+            await modal().alert(t('form.photo_error'));
         }
         event.target.value = '';
     },
@@ -587,7 +595,7 @@ const store = reactive({
 
         await this.loadRecipes();
         $id('suggestionDrawer')?.close();
-        await modal().alert('Rezept wurde zu deiner Sammlung hinzugefügt!');
+        await modal().alert(t('recipes.adopted'));
     },
 
     // === WEEKPLAN ACTIONS ===
@@ -601,13 +609,13 @@ const store = reactive({
 
     async generateNewWeek() {
         if (this.recipes.length === 0) {
-            await modal().alert('Füge zuerst Rezepte hinzu!');
+            await modal().alert(t('weekplan.no_recipes_alert'));
             return;
         }
 
         const confirmed = await modal().confirm(
-            'Neuen Wochenplan generieren?',
-            'Der aktuelle Plan wird überschrieben.'
+            t('weekplan.confirm_generate'),
+            t('weekplan.confirm_generate_desc')
         );
         if (!confirmed) return;
 
@@ -636,7 +644,7 @@ const store = reactive({
             }
 
             days.push({
-                dayName: DAYS[i],
+                dayName: getData('days')[i],
                 date: dayDate.toISOString(),
                 recipeId: recipe.id
             });
@@ -1034,19 +1042,19 @@ const store = reactive({
         const uncheckedItems = this.shoppingList.filter(item => !item.checked);
 
         if (uncheckedItems.length === 0) {
-            await modal().alert('Keine Artikel zum Teilen!', 'Alle Artikel wurden bereits abgehakt.');
+            await modal().alert(t('shopping.no_items_to_share'), t('shopping.all_checked'));
             return;
         }
 
-        let text = '🛒 Einkaufsliste\n\n';
+        let text = `🛒 ${t('share.shopping_header')}\n\n`;
         for (const item of uncheckedItems) {
             text += `☐ ${item.amount} ${item.unit} ${item.name}\n`;
         }
-        text += '\n— Erstellt mit Kochplaner';
+        text += `\n— ${t('share.created_with')}`;
 
         if (navigator.share) {
             try {
-                await navigator.share({ title: 'Einkaufsliste', text });
+                await navigator.share({ title: t('share.shopping_header'), text });
                 return;
             } catch (err) {
                 if (err.name === 'AbortError') return;
@@ -1055,7 +1063,7 @@ const store = reactive({
 
         try {
             await navigator.clipboard.writeText(text);
-            await modal().alert('In Zwischenablage kopiert!');
+            await modal().alert(t('share.copied'));
         } catch {
             await modal().alert(text);
         }
@@ -1063,21 +1071,21 @@ const store = reactive({
 
     async shareWeekplan() {
         if (!this.weekplan) {
-            await modal().alert('Kein Wochenplan zum Teilen!');
+            await modal().alert(t('share.weekplan_none'));
             return;
         }
 
-        let text = '📅 Wochenplan\n\n';
+        let text = `📅 ${t('share.weekplan_header')}\n\n`;
         for (const day of this.weekplan.days) {
             const recipe = this.getRecipeById(day.recipeId);
             const recipeName = recipe?.name || '—';
             text += `${day.dayName}: ${recipeName}\n`;
         }
-        text += '\n— Erstellt mit Kochplaner';
+        text += `\n— ${t('share.created_with')}`;
 
         if (navigator.share) {
             try {
-                await navigator.share({ title: 'Wochenplan', text });
+                await navigator.share({ title: t('share.weekplan_header'), text });
                 return;
             } catch (err) {
                 if (err.name === 'AbortError') return;
@@ -1086,7 +1094,7 @@ const store = reactive({
 
         try {
             await navigator.clipboard.writeText(text);
-            await modal().alert('In Zwischenablage kopiert!');
+            await modal().alert(t('share.copied'));
         } catch {
             await modal().alert(text);
         }
@@ -1094,13 +1102,13 @@ const store = reactive({
 
     async shareApp() {
         const url = window.location.origin + window.location.pathname;
-        const text = '🍳 Kochplaner - Dein Wochenplaner fürs Kochen!\n\n' + url;
+        const text = `🍳 ${t('share.app_text')}\n\n` + url;
 
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Kochplaner',
-                    text: '🍳 Kochplaner - Dein Wochenplaner fürs Kochen!',
+                    title: t('welcome.title'),
+                    text: `🍳 ${t('share.app_text')}`,
                     url
                 });
                 return;
@@ -1111,7 +1119,7 @@ const store = reactive({
 
         try {
             await navigator.clipboard.writeText(text);
-            await modal().alert('Link in Zwischenablage kopiert!');
+            await modal().alert(t('share.link_copied'));
         } catch {
             await modal().alert(text);
         }
@@ -1138,27 +1146,27 @@ const store = reactive({
 
         // Show modal (don't await - we handle clicks ourselves)
         modal().custom({
-            title: 'Teilen',
+            title: t('share.title'),
             html: `
                 <div class="share-options">
                     <button class="primary mt-2" data-action="weekplan">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M17 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H7V1H9V3H15V1H17V3ZM4 9V19H20V9H4ZM6 11H8V13H6V11ZM6 15H8V17H6V15ZM10 11H18V13H10V11ZM10 15H15V17H10V15Z"></path></svg>
-                        <span>Wochenplan teilen</span>
+                        <span>${t('share.weekplan')}</span>
                     </button>
                     <button class="secondary mt-2" data-action="shopping">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M4.00436 6.41686L0.761719 3.17422L2.17593 1.76001L5.41857 5.00265H20.6603C21.2126 5.00265 21.6603 5.45037 21.6603 6.00265C21.6603 6.09997 21.6461 6.19678 21.6182 6.29L19.2182 14.29C19.0913 14.713 18.7019 15.0027 18.2603 15.0027H6.00436V17.0027H17.0044V19.0027H5.00436C4.45207 19.0027 4.00436 18.5549 4.00436 18.0027V6.41686ZM6.00436 7.00265V13.0027H17.5163L19.3163 7.00265H6.00436ZM5.50436 23.0027C4.67593 23.0027 4.00436 22.3311 4.00436 21.5027C4.00436 20.6742 4.67593 20.0027 5.50436 20.0027C6.33279 20.0027 7.00436 20.6742 7.00436 21.5027C7.00436 22.3311 6.33279 23.0027 5.50436 23.0027ZM17.5044 23.0027C16.6759 23.0027 16.0044 22.3311 16.0044 21.5027C16.0044 20.6742 16.6759 20.0027 17.5044 20.0027C18.3328 20.0027 19.0044 20.6742 19.0044 21.5027C19.0044 22.3311 18.3328 23.0027 17.5044 23.0027Z"></path></svg>
-                        <span>Einkaufsliste teilen</span>
+                        <span>${t('share.shopping')}</span>
                     </button>
                     <button class="contrast mt-2 mb-2" data-action="app">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M12 1L21.5 6.5V17.5L12 23L2.5 17.5V6.5L12 1ZM12 3.311L4.5 7.65311V16.3469L12 20.689L19.5 16.3469V7.65311L12 3.311ZM12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12C16 14.2091 14.2091 16 12 16ZM12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z"></path></svg>
-                        <span>App teilen</span>
+                        <span>${t('share.app')}</span>
                     </button>
                 </div>
             `,
             showTitle: false,
             showConfirm: false,
             showCancel: true,
-            cancelText: 'Abbrechen'
+            cancelText: t('common.cancel')
         }).then(() => {
             // Cleanup listener when modal is closed via cancel/backdrop
             shareModal.removeEventListener('click', handleClick);
@@ -1205,7 +1213,7 @@ const store = reactive({
     async importSyncKey() {
         const key = this.syncKeyInput.trim();
         if (!key || key.length < 16) {
-            await modal().alert('Ungültiger Schlüssel. Bitte prüfe die Eingabe.');
+            await modal().alert(t('settings.sync_key_invalid'));
             return;
         }
         this.syncKey = key;
@@ -1229,13 +1237,13 @@ const store = reactive({
                     storeSyncKey(key);
                     await this._connectSync(key, true);
                 } else {
-                    await modal().alert('Ungültiger QR-Code. Bitte versuche es erneut.');
+                    await modal().alert(t('settings.sync_qr_invalid'));
                     this.syncState = 'importing';
                 }
             });
         } catch (err) {
             console.error('[App] Camera error:', err);
-            await modal().alert('Kamera konnte nicht gestartet werden. Bitte gib den Schlüssel manuell ein.');
+            await modal().alert(t('settings.sync_camera_error'));
             this.syncState = 'importing';
         }
     },
@@ -1270,7 +1278,7 @@ const store = reactive({
 
         if (navigator.share) {
             try {
-                await navigator.share({ title: 'Kochplaner Sync-Key', text });
+                await navigator.share({ title: t('welcome.title') + ' Sync-Key', text });
                 return;
             } catch (err) {
                 if (err.name === 'AbortError') return;
@@ -1279,10 +1287,10 @@ const store = reactive({
 
         try {
             await navigator.clipboard.writeText(text);
-            await modal().alert('Schlüssel in Zwischenablage kopiert!');
+            await modal().alert(t('settings.sync_key_copied'));
         } catch {
             // Fallback: select text for manual copy
-            await modal().alert('Bitte kopiere den Schlüssel manuell.');
+            await modal().alert(t('settings.sync_key_manual'));
         }
     },
 
@@ -1316,9 +1324,8 @@ const store = reactive({
                 if (isJoining) {
                     // Joining existing sync with local data - inform user about merge
                     await modal().alert(
-                        'Daten werden zusammengeführt',
-                        'Deine lokalen Rezepte werden mit dem anderen Gerät zusammengeführt. ' +
-                        'Für den Wochenplan wird der jeweils neueste verwendet.'
+                        t('settings.sync_merge_title'),
+                        t('settings.sync_merge_text')
                     );
                 }
 
@@ -1370,17 +1377,17 @@ const store = reactive({
 
             // Handle weekplan conflicts (both devices have different weekplans)
             syncManager.onWeekplanConflict = async (localWeekplan, remoteWeekplan) => {
-                const localDate = new Date(localWeekplan.startDate).toLocaleDateString('de-DE');
-                const remoteDate = new Date(remoteWeekplan.startDate).toLocaleDateString('de-DE');
+                const localDate = new Date(localWeekplan.startDate).toLocaleDateString(getIntlLocale());
+                const remoteDate = new Date(remoteWeekplan.startDate).toLocaleDateString(getIntlLocale());
 
                 const choice = await modal().custom({
-                    title: 'Wochenplan-Konflikt',
-                    html: `<p>Beide Geräte haben unterschiedliche Wochenpläne.</p>
-                           <p><strong>Dieses Gerät:</strong> Woche ab ${localDate}</p>
-                           <p><strong>Anderes Gerät:</strong> Woche ab ${remoteDate}</p>
-                           <p>Welchen Wochenplan möchtest du verwenden?</p>`,
-                    confirmText: 'Anderes Gerät',
-                    cancelText: 'Dieses Gerät',
+                    title: t('settings.sync_conflict_title'),
+                    html: `<p>${t('settings.sync_conflict_text')}</p>
+                           <p><strong>${t('settings.sync_conflict_local')}</strong> ${t('settings.sync_conflict_week', { date: localDate })}</p>
+                           <p><strong>${t('settings.sync_conflict_remote')}</strong> ${t('settings.sync_conflict_week', { date: remoteDate })}</p>
+                           <p>${t('settings.sync_conflict_question')}</p>`,
+                    confirmText: t('settings.sync_conflict_use_remote'),
+                    cancelText: t('settings.sync_conflict_use_local'),
                     showCancel: true
                 });
 
@@ -1413,7 +1420,7 @@ const store = reactive({
 
         } catch (err) {
             console.error('[App] Sync init failed:', err);
-            await modal().alert('Sync konnte nicht aktiviert werden: ' + err.message);
+            await modal().alert(t('settings.sync_error') + err.message);
             this.syncState = 'none';
         }
         this.syncLoading = false;
@@ -1453,12 +1460,12 @@ const store = reactive({
             const { initSpeechModel } = await import('./speech.js');
             await initSpeechModel((progress) => {
                 this.speechProgress = Math.round(progress * 100);
-            });
+            }, getData('speechModelUrl'));
             this.speechEnabled = true;
             localStorage.setItem('speechEnabled', 'true');
         } catch (err) {
             console.error('[App] Speech init failed:', err);
-            await modal().alert('Spracherkennung konnte nicht aktiviert werden: ' + err.message);
+            await modal().alert(t('settings.speech_error') + err.message);
         }
         this.speechLoading = false;
         this.speechProgress = 0;
@@ -1496,11 +1503,11 @@ const store = reactive({
             try {
                 await initSpeechModel((progress) => {
                     this.speechProgress = Math.round(progress * 100);
-                });
+                }, getData('speechModelUrl'));
             } catch {
                 this.speechLoading = false;
                 this.speechProgress = 0;
-                await modal().alert('Sprachmodell konnte nicht geladen werden. Bitte erneut aktivieren.');
+                await modal().alert(t('settings.speech_model_error'));
                 this.speechEnabled = false;
                 localStorage.removeItem('speechEnabled');
                 return;
@@ -1516,9 +1523,9 @@ const store = reactive({
         } catch (err) {
             console.error('[App] Speech start failed:', err);
             if (err.name === 'NotAllowedError') {
-                await modal().alert('Mikrofonzugriff wurde verweigert. Bitte erlaube den Zugriff in den Browser-Einstellungen.');
+                await modal().alert(t('settings.speech_mic_denied'));
             } else {
-                await modal().alert('Mikrofon konnte nicht gestartet werden: ' + err.message);
+                await modal().alert(t('settings.speech_mic_error') + err.message);
             }
         }
     },
@@ -1562,26 +1569,8 @@ const store = reactive({
      * Handles patterns like: "Tomaten fünf Stück", "500 Gramm Mehl", "eine Zwiebel"
      */
     _parseIngredient(text) {
-        // German number words to digits
-        const numberWords = {
-            'null': 0, 'ein': 1, 'eine': 1, 'einer': 1, 'einen': 1, 'eins': 1,
-            'zwei': 2, 'zwo': 2, 'drei': 3, 'vier': 4, 'fünf': 5,
-            'sechs': 6, 'sieben': 7, 'acht': 8, 'neun': 9, 'zehn': 10,
-            'elf': 11, 'zwölf': 12, 'dreizehn': 13, 'vierzehn': 14, 'fünfzehn': 15,
-            'zwanzig': 20, 'dreißig': 30, 'vierzig': 40, 'fünfzig': 50,
-            'hundert': 100, 'halbe': 0.5, 'halbes': 0.5, 'halben': 0.5,
-            'einhalb': 1.5, 'anderthalb': 1.5, 'viertel': 0.25
-        };
-
-        // Common units
-        const units = [
-            'stück', 'stk', 'gramm', 'g', 'kilogramm', 'kg', 'kilo',
-            'liter', 'l', 'milliliter', 'ml', 'deziliter', 'dl',
-            'teelöffel', 'tl', 'esslöffel', 'el', 'löffel',
-            'tasse', 'tassen', 'becher', 'dose', 'dosen', 'glas', 'gläser',
-            'prise', 'prisen', 'bund', 'bunde', 'scheibe', 'scheiben',
-            'packung', 'packungen', 'päckchen', 'pkg', 'pck'
-        ];
+        const numberWords = getData('numberWords') || {};
+        const units = getData('units') || [];
 
         const words = text.toLowerCase().split(/\s+/);
         let amount = '';
@@ -1665,21 +1654,21 @@ const store = reactive({
             shoppingModal.addEventListener('click', handleClick);
 
             modal().custom({
-                title: 'Einkaufsliste',
+                title: t('shopping.list_options_title'),
                 html: `
-                    <p>Wie soll die Einkaufsliste aktualisiert werden?</p>
+                    <p>${t('shopping.list_options_text')}</p>
                     <div class="shopping-list-options">
                         <button class="primary mt-1" data-action="append">
-                            Ergänzen
-                            <small>Vorhandene Einträge behalten</small>
+                            ${t('shopping.option_append')}
+                            <small>${t('shopping.option_append_desc')}</small>
                         </button>
                         <button class="secondary mt-1" data-action="replace">
-                            Ersetzen
-                            <small>Vorhandene Einträge löschen</small>
+                            ${t('shopping.option_replace')}
+                            <small>${t('shopping.option_replace_desc')}</small>
                         </button>
                         <button class="outline mt-1" data-action="skip">
-                            Überspringen
-                            <small>Keine Einkaufsliste erstellen</small>
+                            ${t('shopping.option_skip')}
+                            <small>${t('shopping.option_skip_desc')}</small>
                         </button>
                     </div>
                 `,
@@ -1775,7 +1764,7 @@ const APP_VERSION = '1.5';
 const lastVersion = localStorage.getItem('appVersion');
 if (lastVersion && lastVersion !== APP_VERSION) {
     // Show toast after a short delay to ensure DOM is ready
-    setTimeout(() => showToast('App wurde aktualisiert'), 1000);
+    setTimeout(() => showToast(t('toast.app_updated')), 1000);
 }
 localStorage.setItem('appVersion', APP_VERSION);
 
@@ -1825,7 +1814,7 @@ store.skipInstall = function() {
 // Manual install function for Settings page
 window.installApp = async function() {
     if (isStandaloneMode) {
-        await modal().alert('App ist bereits installiert!');
+        await modal().alert(t('settings.install_already'));
         return;
     }
 
@@ -1842,8 +1831,8 @@ window.installApp = async function() {
         }
     } else {
         await modal().alert(
-            'Installation nicht verfügbar',
-            'Öffne die App im Browser und versuche es erneut.'
+            t('settings.install_unavailable_title'),
+            t('settings.install_unavailable_desc')
         );
     }
 };
